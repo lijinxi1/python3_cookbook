@@ -1,4 +1,4 @@
-#--coding:utf-8--
+#-*-coding:utf-8-*-
 #@author:lijinxi
 from PyPDF2 import PdfFileReader,PdfFileWriter
 import threading

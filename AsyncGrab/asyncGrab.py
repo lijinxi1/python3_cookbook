@@ -1,4 +1,4 @@
-# --coding:utf-8 --
+#-*-coding:utf-8-*-
 #@author:lijinxi
 import asyncio
 from bs4 import BeautifulSoup
