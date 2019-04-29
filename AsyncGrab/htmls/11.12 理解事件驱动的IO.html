@@ -1,0 +1,335 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>11.12 理解事件驱动的IO — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="io">
+<h1>11.12 理解事件驱动的IO<a class="headerlink" href="#io" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你应该已经听过基于事件驱动或异步I/O的包，但是你还不能完全理解它的底层到底是怎样工作的，
+或者是如果使用它的话会对你的程序产生什么影响。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>事件驱动I/O本质上来讲就是将基本I/O操作（比如读和写）转化为你程序需要处理的事件。
+例如，当数据在某个socket上被接受后，它会转换成一个 <code class="docutils literal notranslate"><span class="pre">receive</span></code> 事件，然后被你定义的回调方法或函数来处理。
+作为一个可能的起始点，一个事件驱动的框架可能会以一个实现了一系列基本事件处理器方法的基类开始：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EventHandler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">'Return the associated file descriptor'</span>
+        <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span><span class="s1">'must implement'</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">'Return True if receiving is allowed'</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">'Perform the receive operation'</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_send</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">'Return True if sending is requested'</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">handle_send</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s1">'Send outgoing data'</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>这个类的实例作为插件被放入类似下面这样的事件循环中：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">select</span>
+
+<span class="k">def</span> <span class="nf">event_loop</span><span class="p">(</span><span class="n">handlers</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">wants_recv</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handlers</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">wants_to_receive</span><span class="p">()]</span>
+        <span class="n">wants_send</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handlers</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">wants_to_send</span><span class="p">()]</span>
+        <span class="n">can_recv</span><span class="p">,</span> <span class="n">can_send</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">wants_recv</span><span class="p">,</span> <span class="n">wants_send</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">can_recv</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">handle_receive</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">can_send</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">handle_send</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>事件循环的关键部分是 <code class="docutils literal notranslate"><span class="pre">select()</span></code> 调用，它会不断轮询文件描述符从而激活它。
+在调用 <code class="docutils literal notranslate"><span class="pre">select()</span></code> 之前，事件循环会询问所有的处理器来决定哪一个想接受或发生。
+然后它将结果列表提供给 <code class="docutils literal notranslate"><span class="pre">select()</span></code> 。然后 <code class="docutils literal notranslate"><span class="pre">select()</span></code> 返回准备接受或发送的对象组成的列表。
+然后相应的 <code class="docutils literal notranslate"><span class="pre">handle_receive()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">handle_send()</span></code> 方法被触发。</p>
+<p>编写应用程序的时候，<code class="docutils literal notranslate"><span class="pre">EventHandler</span></code> 的实例会被创建。例如，下面是两个简单的基于UDP网络服务的处理器例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">class</span> <span class="nc">UDPServer</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">class</span> <span class="nc">UDPTimeServer</span><span class="p">(</span><span class="n">UDPServer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">msg</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'ascii'</span><span class="p">),</span> <span class="n">addr</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">UDPEchoServer</span><span class="p">(</span><span class="n">UDPServer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">msg</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">handlers</span> <span class="o">=</span> <span class="p">[</span> <span class="n">UDPTimeServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span><span class="mi">14000</span><span class="p">)),</span> <span class="n">UDPEchoServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span><span class="mi">15000</span><span class="p">))</span>  <span class="p">]</span>
+    <span class="n">event_loop</span><span class="p">(</span><span class="n">handlers</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>测试这段代码，试着从另外一个Python解释器连接它：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">socket</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_DGRAM</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="sa">b</span><span class="s1">''</span><span class="p">,(</span><span class="s1">'localhost'</span><span class="p">,</span><span class="mi">14000</span><span class="p">))</span>
+<span class="go">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+<span class="go">(b'Tue Sep 18 14:29:23 2012', ('127.0.0.1', 14000))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello'</span><span class="p">,(</span><span class="s1">'localhost'</span><span class="p">,</span><span class="mi">15000</span><span class="p">))</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+<span class="go">(b'Hello', ('127.0.0.1', 15000))</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>实现一个TCP服务器会更加复杂一点，因为每一个客户端都要初始化一个新的处理器对象。
+下面是一个TCP应答客户端例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TCPServer</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">client_handler</span><span class="p">,</span> <span class="n">handler_list</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_handler</span> <span class="o">=</span> <span class="n">client_handler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handler_list</span> <span class="o">=</span> <span class="n">handler_list</span>
+
+    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="c1"># Add the client to the event loop's handler list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handler_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_handler</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler_list</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">TCPClient</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">handler_list</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">sock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handler_list</span> <span class="o">=</span> <span class="n">handler_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># Remove myself from the event loop's handler list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handler_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_send</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span> <span class="k">else</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">handle_send</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">nsent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span><span class="p">[</span><span class="n">nsent</span><span class="p">:]</span>
+
+<span class="k">class</span> <span class="nc">TCPEchoClient</span><span class="p">(</span><span class="n">TCPClient</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wants_to_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+   <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TCPServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span><span class="mi">16000</span><span class="p">),</span> <span class="n">TCPEchoClient</span><span class="p">,</span> <span class="n">handlers</span><span class="p">))</span>
+   <span class="n">event_loop</span><span class="p">(</span><span class="n">handlers</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TCP例子的关键点是从处理器中列表增加和删除客户端的操作。
+对每一个连接，一个新的处理器被创建并加到列表中。当连接被关闭后，每个客户端负责将其从列表中删除。
+如果你运行程序并试着用Telnet或类似工具连接，它会将你发送的消息回显给你。并且它能很轻松的处理多客户端连接。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>实际上所有的事件驱动框架原理跟上面的例子相差无几。实际的实现细节和软件架构可能不一样，
+但是在最核心的部分，都会有一个轮询的循环来检查活动socket，并执行响应操作。</p>
+<p>事件驱动I/O的一个可能好处是它能处理非常大的并发连接，而不需要使用多线程或多进程。
+也就是说，<code class="docutils literal notranslate"><span class="pre">select()</span></code> 调用（或其他等效的）能监听大量的socket并响应它们中任何一个产生事件的。
+在循环中一次处理一个事件，并不需要其他的并发机制。</p>
+<p>事件驱动I/O的缺点是没有真正的同步机制。
+如果任何事件处理器方法阻塞或执行一个耗时计算，它会阻塞所有的处理进程。
+调用那些并不是事件驱动风格的库函数也会有问题，同样要是某些库函数调用会阻塞，那么也会导致整个事件循环停止。</p>
+<p>对于阻塞或耗时计算的问题可以通过将事件发送个其他单独的现场或进程来处理。
+不过，在事件循环中引入多线程和多进程是比较棘手的，
+下面的例子演示了如何使用 <code class="docutils literal notranslate"><span class="pre">concurrent.futures</span></code> 模块来实现：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">class</span> <span class="nc">ThreadPoolHandler</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nworkers</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'posix'</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signal_done_sock</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">done_sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socketpair</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">server</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+            <span class="n">server</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">'127.0.0.1'</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signal_done_sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span>
+                                                  <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signal_done_sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">getsockname</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">done_sock</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+            <span class="n">server</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">nworkers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">done_sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+
+    <span class="c1"># Callback that executes when the thread is done</span>
+    <span class="k">def</span> <span class="nf">_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">callback</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">result</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_done_sock</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s1">'x'</span><span class="p">)</span>
+
+    <span class="c1"># Run a function in a thread pool</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{},</span><span class="o">*</span><span class="p">,</span><span class="n">callback</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_complete</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">wants_to_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="c1"># Run callback functions of completed work</span>
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Invoke all pending callback functions</span>
+        <span class="k">for</span> <span class="n">callback</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">done_sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending</span> <span class="o">=</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<p>在代码中，<code class="docutils literal notranslate"><span class="pre">run()</span></code> 方法被用来将工作提交给回调函数池，处理完成后被激发。
+实际工作被提交给 <code class="docutils literal notranslate"><span class="pre">ThreadPoolExecutor</span></code> 实例。
+不过一个难点是协调计算结果和事件循环，为了解决它，我们创建了一对socket并将其作为某种信号量机制来使用。
+当线程池完成工作后，它会执行类中的 <code class="docutils literal notranslate"><span class="pre">_complete()</span></code> 方法。
+这个方法再某个socket上写入字节之前会讲挂起的回调函数和结果放入队列中。
+<code class="docutils literal notranslate"><span class="pre">fileno()</span></code> 方法返回另外的那个socket。
+因此，这个字节被写入时，它会通知事件循环，
+然后 <code class="docutils literal notranslate"><span class="pre">handle_receive()</span></code> 方法被激活并为所有之前提交的工作执行回调函数。
+坦白讲，说了这么多连我自己都晕了。
+下面是一个简单的服务器，演示了如何使用线程池来实现耗时的计算：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># A really bad Fibonacci implementation</span>
+<span class="k">def</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fib</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">fib</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">UDPFibServer</span><span class="p">(</span><span class="n">UDPServer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">msg</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fib</span><span class="p">,</span> <span class="p">(</span><span class="n">n</span><span class="p">,),</span> <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">respond</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">addr</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">respond</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'ascii'</span><span class="p">),</span> <span class="n">addr</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">ThreadPoolHandler</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">handlers</span> <span class="o">=</span> <span class="p">[</span> <span class="n">pool</span><span class="p">,</span> <span class="n">UDPFibServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span><span class="mi">16000</span><span class="p">))]</span>
+    <span class="n">event_loop</span><span class="p">(</span><span class="n">handlers</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>运行这个服务器，然后试着用其它Python程序来测试它：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">socket</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_DGRAM</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">40</span><span class="p">):</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'ascii'</span><span class="p">),</span> <span class="p">(</span><span class="s1">'localhost'</span><span class="p">,</span> <span class="mi">16000</span><span class="p">))</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">resp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>你应该能在不同窗口中重复的执行这个程序，并且不会影响到其他程序，尽管当数字便越来越大时候它会变得越来越慢。</p>
+<p>已经阅读完了这一小节，那么你应该使用这里的代码吗？也许不会。你应该选择一个可以完成同样任务的高级框架。
+不过，如果你理解了基本原理，你就能理解这些框架所使用的核心技术。
+作为对回调函数编程的替代，事件驱动编码有时候会使用到协程，参考12.12小节的一个例子。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

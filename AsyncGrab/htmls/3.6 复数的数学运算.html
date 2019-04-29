@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>3.6 复数的数学运算 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>3.6 复数的数学运算<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你写的最新的网络认证方案代码遇到了一个难题，并且你唯一的解决办法就是使用复数空间。
+再或者是你仅仅需要使用复数来执行一些计算操作。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>复数可以用使用函数 <code class="docutils literal notranslate"><span class="pre">complex(real,</span> <span class="pre">imag)</span></code> 或者是带有后缀j的浮点数来指定。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">5j</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="go">(2+4j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
+<span class="go">(3-5j)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对应的实部、虚部和共轭复数可以很容易的获取。就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">real</span>
+<span class="go">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">imag</span>
+<span class="go">4.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span>
+<span class="go">(2-4j)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>另外，所有常见的数学运算都可以工作：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+<span class="go">(5-1j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span>
+<span class="go">(26+2j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
+<span class="go">(-0.4117647058823529+0.6470588235294118j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">4.47213595499958</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果要执行其他的复数函数比如正弦、余弦或平方根，使用 <code class="docutils literal notranslate"><span class="pre">cmath</span></code> 模块：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cmath</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmath</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(24.83130584894638-11.356612711218174j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmath</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(-11.36423470640106-24.814651485634187j)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmath</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(-4.829809383269385-5.5920560936409816j)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>Python中大部分与数学相关的模块都能处理复数。
+比如如果你使用 <code class="docutils literal notranslate"><span class="pre">numpy</span></code> ，可以很容易的构造一个复数数组并在这个数组上执行各种操作：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="o">+</span><span class="mi">3j</span><span class="p">,</span> <span class="mi">4</span><span class="o">+</span><span class="mi">5j</span><span class="p">,</span> <span class="mi">6</span><span class="o">-</span><span class="mi">7j</span><span class="p">,</span> <span class="mi">8</span><span class="o">+</span><span class="mi">9j</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="go">array([ 2.+3.j, 4.+5.j, 6.-7.j, 8.+9.j])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">+</span> <span class="mi">2</span>
+<span class="go">array([ 4.+3.j, 6.+5.j, 8.-7.j, 10.+9.j])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">array([ 9.15449915 -4.16890696j, -56.16227422 -48.50245524j,</span>
+<span class="go">        -153.20827755-526.47684926j, 4008.42651446-589.49948373j])</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Python的标准数学函数确实情况下并不能产生复数值，因此你的代码中不可能会出现复数返回值。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="gr">ValueError</span>: <span class="n">math domain error</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想生成一个复数返回结果，你必须显示的使用 <code class="docutils literal notranslate"><span class="pre">cmath</span></code> 模块，或者在某个支持复数的库中声明复数类型的使用。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cmath</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmath</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1j</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

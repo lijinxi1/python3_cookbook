@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>7.2 只接受关键字参数的函数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>7.2 只接受关键字参数的函数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你希望函数的某些参数强制使用关键字参数传递</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>将强制关键字参数放到某个*参数或者单个*后面就能达到这种效果。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">recv</span><span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">block</span><span class="p">):</span>
+    <span class="s1">'Receives a message'</span>
+    <span class="k">pass</span>
+
+<span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span> <span class="c1"># TypeError</span>
+<span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="c1"># Ok</span>
+</pre></div>
+</div>
+<p>利用这种技术，我们还能在接受任意多个位置参数的函数中指定关键字参数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">minimum</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">clip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">clip</span> <span class="k">if</span> <span class="n">clip</span> <span class="o">&gt;</span> <span class="n">m</span> <span class="k">else</span> <span class="n">m</span>
+    <span class="k">return</span> <span class="n">m</span>
+
+<span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="c1"># Returns -5</span>
+<span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># Returns 0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>很多情况下，使用强制关键字参数会比使用位置参数表意更加清晰，程序也更加具有可读性。
+例如，考虑下如下一个函数调用：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">msg</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>如果调用者对recv函数并不是很熟悉，那他肯定不明白那个False参数到底来干嘛用的。
+但是，如果代码变成下面这样子的话就清楚多了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">msg</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>另外，使用强制关键字参数也会比使用**kwargs参数更好，因为在使用函数help的时候输出也会更容易理解：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">recv</span><span class="p">)</span>
+<span class="go">Help on function recv in module __main__:</span>
+<span class="go">recv(maxsize, *, block)</span>
+<span class="go">    Receives a message</span>
+</pre></div>
+</div>
+<p>强制关键字参数在一些更高级场合同样也很有用。
+例如，它们可以被用来在使用*args和**kwargs参数作为输入的函数中插入参数，9.11小节有一个这样的例子。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.17 创建不调用init方法的实例 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="init">
+<h1>8.17 创建不调用init方法的实例<a class="headerlink" href="#init" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想创建一个实例，但是希望绕过执行 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>可以通过 <code class="docutils literal notranslate"><span class="pre">__new__()</span></code> 方法创建一个未初始化的实例。例如考虑如下这个类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Date</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="n">month</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="n">day</span>
+</pre></div>
+</div>
+<p>下面演示如何不调用 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法来创建这个Date实例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">Date</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">Date</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">&lt;__main__.Date object at 0x1006716d0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">year</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="gr">AttributeError</span>: <span class="n">'Date' object has no attribute 'year'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>结果可以看到，这个Date实例的属性year还不存在，所以你需要手动初始化：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'year'</span><span class="p">:</span><span class="mi">2012</span><span class="p">,</span> <span class="s1">'month'</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="s1">'day'</span><span class="p">:</span><span class="mi">29</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">setattr</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">year</span>
+<span class="go">2012</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">month</span>
+<span class="go">8</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>当我们在反序列对象或者实现某个类方法构造函数时需要绕过 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法来创建对象。
+例如，对于上面的Date来讲，有时候你可能会像下面这样定义一个新的构造函数 <code class="docutils literal notranslate"><span class="pre">today()</span></code> ：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">localtime</span>
+
+<span class="k">class</span> <span class="nc">Date</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="n">month</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="n">day</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">today</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">localtime</span><span class="p">()</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">tm_year</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">tm_mon</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">tm_mday</span>
+        <span class="k">return</span> <span class="n">d</span>
+</pre></div>
+</div>
+<p>同样，在你反序列化JSON数据时产生一个如下的字典对象：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">'year'</span><span class="p">:</span> <span class="mi">2012</span><span class="p">,</span> <span class="s1">'month'</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s1">'day'</span><span class="p">:</span> <span class="mi">29</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>如果你想将它转换成一个Date类型实例，可以使用上面的技术。</p>
+<p>当你通过这种非常规方式来创建实例的时候，最好不要直接去访问底层实例字典，除非你真的清楚所有细节。
+否则的话，如果这个类使用了 <code class="docutils literal notranslate"><span class="pre">__slots__</span></code> 、properties 、descriptors 或其他高级技术的时候代码就会失效。
+而这时候使用 <code class="docutils literal notranslate"><span class="pre">setattr()</span></code> 方法会让你的代码变得更加通用。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

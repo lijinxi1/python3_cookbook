@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.6 创建可管理的属性 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.6 创建可管理的属性<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想给某个实例attribute增加除访问与修改之外的其他处理逻辑，比如类型检查或合法性验证。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>自定义某个属性的一种简单方法是将它定义为一个property。
+例如，下面的代码定义了一个property，增加对一个属性简单的类型检查：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span> <span class="o">=</span> <span class="n">first_name</span>
+
+    <span class="c1"># Getter function</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span>
+
+    <span class="c1"># Setter function</span>
+    <span class="nd">@first_name.setter</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected a string'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># Deleter function (optional)</span>
+    <span class="nd">@first_name.deleter</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Can't delete attribute"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>上述代码中有三个相关联的方法，这三个方法的名字都必须一样。
+第一个方法是一个 <code class="docutils literal notranslate"><span class="pre">getter</span></code> 函数，它使得 <code class="docutils literal notranslate"><span class="pre">first_name</span></code> 成为一个属性。
+其他两个方法给 <code class="docutils literal notranslate"><span class="pre">first_name</span></code> 属性添加了 <code class="docutils literal notranslate"><span class="pre">setter</span></code> 和 <code class="docutils literal notranslate"><span class="pre">deleter</span></code> 函数。
+需要强调的是只有在 <code class="docutils literal notranslate"><span class="pre">first_name</span></code> 属性被创建后，
+后面的两个装饰器 <code class="docutils literal notranslate"><span class="pre">@first_name.setter</span></code> 和 <code class="docutils literal notranslate"><span class="pre">@first_name.deleter</span></code> 才能被定义。</p>
+<p>property的一个关键特征是它看上去跟普通的attribute没什么两样，
+但是访问它的时候会自动触发 <code class="docutils literal notranslate"><span class="pre">getter</span></code> 、<code class="docutils literal notranslate"><span class="pre">setter</span></code> 和 <code class="docutils literal notranslate"><span class="pre">deleter</span></code> 方法。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Person</span><span class="p">(</span><span class="s1">'Guido'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">first_name</span> <span class="c1"># Calls the getter</span>
+<span class="go">'Guido'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">first_name</span> <span class="o">=</span> <span class="mi">42</span> <span class="c1"># Calls the setter</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"prop.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">14</span><span class="p">,</span> <span class="ow">in</span> <span class="n">first_name</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected a string'</span><span class="p">)</span>
+<span class="gr">TypeError</span>: <span class="n">Expected a string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">a</span><span class="o">.</span><span class="n">first_name</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="gr">AttributeError</span>: <span class="n">can`t delete attribute</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>在实现一个property的时候，底层数据(如果有的话)仍然需要存储在某个地方。
+因此，在get和set方法中，你会看到对 <code class="docutils literal notranslate"><span class="pre">_first_name</span></code> 属性的操作，这也是实际数据保存的地方。
+另外，你可能还会问为什么 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法中设置了 <code class="docutils literal notranslate"><span class="pre">self.first_name</span></code> 而不是 <code class="docutils literal notranslate"><span class="pre">self._first_name</span></code> 。
+在这个例子中，我们创建一个property的目的就是在设置attribute的时候进行检查。
+因此，你可能想在初始化的时候也进行这种类型检查。通过设置 <code class="docutils literal notranslate"><span class="pre">self.first_name</span></code> ，自动调用 <code class="docutils literal notranslate"><span class="pre">setter</span></code> 方法，
+这个方法里面会进行参数的检查，否则就是直接访问 <code class="docutils literal notranslate"><span class="pre">self._first_name</span></code> 了。</p>
+<p>还能在已存在的get和set方法基础上定义property。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_first_name</span><span class="p">(</span><span class="n">first_name</span><span class="p">)</span>
+
+    <span class="c1"># Getter function</span>
+    <span class="k">def</span> <span class="nf">get_first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span>
+
+    <span class="c1"># Setter function</span>
+    <span class="k">def</span> <span class="nf">set_first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected a string'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># Deleter function (optional)</span>
+    <span class="k">def</span> <span class="nf">del_first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Can't delete attribute"</span><span class="p">)</span>
+
+    <span class="c1"># Make a property from existing get/set methods</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_first_name</span><span class="p">,</span> <span class="n">set_first_name</span><span class="p">,</span> <span class="n">del_first_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>一个property属性其实就是一系列相关绑定方法的集合。如果你去查看拥有property的类，
+就会发现property本身的fget、fset和fdel属性就是类里面的普通方法。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">first_name</span><span class="o">.</span><span class="n">fget</span>
+<span class="go">&lt;function Person.first_name at 0x1006a60e0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">first_name</span><span class="o">.</span><span class="n">fset</span>
+<span class="go">&lt;function Person.first_name at 0x1006a6170&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">first_name</span><span class="o">.</span><span class="n">fdel</span>
+<span class="go">&lt;function Person.first_name at 0x1006a62e0&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>通常来讲，你不会直接取调用fget或者fset，它们会在访问property的时候自动被触发。</p>
+<p>只有当你确实需要对attribute执行其他额外的操作的时候才应该使用到property。
+有时候一些从其他编程语言(比如Java)过来的程序员总认为所有访问都应该通过getter和setter，
+所以他们认为代码应该像下面这样写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span> <span class="o">=</span> <span class="n">first_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span>
+
+    <span class="nd">@first_name.setter</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span> <span class="o">=</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>不要写这种没有做任何其他额外操作的property。
+首先，它会让你的代码变得很臃肿，并且还会迷惑阅读者。
+其次，它还会让你的程序运行起来变慢很多。
+最后，这样的设计并没有带来任何的好处。
+特别是当你以后想给普通attribute访问添加额外的处理逻辑的时候，
+你可以将它变成一个property而无需改变原来的代码。
+因为访问attribute的代码还是保持原样。</p>
+<p>Properties还是一种定义动态计算attribute的方法。
+这种类型的attributes并不会被实际的存储，而是在需要的时候计算出来。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="k">class</span> <span class="nc">Circle</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">perimeter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span>
+</pre></div>
+</div>
+<p>在这里，我们通过使用properties，将所有的访问接口形式统一起来，
+对半径、直径、周长和面积的访问都是通过属性访问，就跟访问简单的attribute是一样的。
+如果不这样做的话，那么就要在代码中混合使用简单属性访问和方法调用。
+下面是使用的实例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">Circle</span><span class="p">(</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">radius</span>
+<span class="go">4.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">area</span>  <span class="c1"># Notice lack of ()</span>
+<span class="go">50.26548245743669</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">perimeter</span>  <span class="c1"># Notice lack of ()</span>
+<span class="go">25.132741228718345</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>尽管properties可以实现优雅的编程接口，但有些时候你还是会想直接使用getter和setter函数。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Person</span><span class="p">(</span><span class="s1">'Guido'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">get_first_name</span><span class="p">()</span>
+<span class="go">'Guido'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">set_first_name</span><span class="p">(</span><span class="s1">'Larry'</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这种情况的出现通常是因为Python代码被集成到一个大型基础平台架构或程序中。
+例如，有可能是一个Python类准备加入到一个基于远程过程调用的大型分布式系统中。
+这种情况下，直接使用get/set方法(普通方法调用)而不是property或许会更容易兼容。</p>
+<p>最后一点，不要像下面这样写有大量重复代码的property定义：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span> <span class="o">=</span> <span class="n">first_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_name</span> <span class="o">=</span> <span class="n">last_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span>
+
+    <span class="nd">@first_name.setter</span>
+    <span class="k">def</span> <span class="nf">first_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected a string'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># Repeated property code, but for a different name (bad!)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">last_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_name</span>
+
+    <span class="nd">@last_name.setter</span>
+    <span class="k">def</span> <span class="nf">last_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected a string'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_name</span> <span class="o">=</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>重复代码会导致臃肿、易出错和丑陋的程序。好消息是，通过使用装饰器或闭包，有很多种更好的方法来完成同样的事情。
+可以参考8.9和9.21小节的内容。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

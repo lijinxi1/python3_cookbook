@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>2.15 字符串中插入变量 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>2.15 字符串中插入变量<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想创建一个内嵌变量的字符串，变量被它的值所表示的字符串替换掉。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Python并没有对在字符串中简单替换变量值提供直接的支持。
+但是通过使用字符串的 <code class="docutils literal notranslate"><span class="pre">format()</span></code> 方法来解决这个问题。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="s1">'{name} has {n} messages.'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Guido'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">37</span><span class="p">)</span>
+<span class="go">'Guido has 37 messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>或者，如果要被替换的变量能在变量域中找到，
+那么你可以结合使用 <code class="docutils literal notranslate"><span class="pre">format_map()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">vars()</span></code> 。就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">name</span> <span class="o">=</span> <span class="s1">'Guido'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="mi">37</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="nb">vars</span><span class="p">())</span>
+<span class="go">'Guido has 37 messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">vars()</span></code> 还有一个有意思的特性就是它也适用于对象实例。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Info</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Info</span><span class="p">(</span><span class="s1">'Guido'</span><span class="p">,</span><span class="mi">37</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+<span class="go">'Guido has 37 messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">format</span></code> 和 <code class="docutils literal notranslate"><span class="pre">format_map()</span></code> 的一个缺陷就是它们并不能很好的处理变量缺失的情况，比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Guido'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">KeyError</span>: <span class="n">'n'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>一种避免这种错误的方法是另外定义一个含有 <code class="docutils literal notranslate"><span class="pre">__missing__()</span></code> 方法的字典对象，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">safesub</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="sd">"""防止key找不到"""</span>
+<span class="k">def</span> <span class="fm">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">'{'</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s1">'}'</span>
+</pre></div>
+</div>
+<p>现在你可以利用这个类包装输入后传递给 <code class="docutils literal notranslate"><span class="pre">format_map()</span></code> ：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">n</span> <span class="c1"># Make sure n is undefined</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">safesub</span><span class="p">(</span><span class="nb">vars</span><span class="p">()))</span>
+<span class="go">'Guido has {n} messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你发现自己在代码中频繁的执行这些步骤，你可以将变量替换步骤用一个工具函数封装起来。就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">def</span> <span class="nf">sub</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">safesub</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">f_locals</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>现在你可以像下面这样写了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">name</span> <span class="o">=</span> <span class="s1">'Guido'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="mi">37</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="s1">'Hello {name}'</span><span class="p">))</span>
+<span class="go">Hello Guido</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="s1">'You have {n} messages.'</span><span class="p">))</span>
+<span class="go">You have 37 messages.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">sub</span><span class="p">(</span><span class="s1">'Your favorite color is {color}'</span><span class="p">))</span>
+<span class="go">Your favorite color is {color}</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>多年以来由于Python缺乏对变量替换的内置支持而导致了各种不同的解决方案。
+作为本节中展示的一个可能的解决方案，你可以有时候会看到像下面这样的字符串格式化代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">name</span> <span class="o">=</span> <span class="s1">'Guido'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="mi">37</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">'%(name) has %(n) messages.'</span> <span class="o">%</span> <span class="nb">vars</span><span class="p">()</span>
+<span class="go">'Guido has 37 messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>你可能还会看到字符串模板的使用：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">Template</span><span class="p">(</span><span class="s1">'$name has $n messages.'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="nb">vars</span><span class="p">())</span>
+<span class="go">'Guido has 37 messages.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>然而， <code class="docutils literal notranslate"><span class="pre">format()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">format_map()</span></code> 相比较上面这些方案而已更加先进，因此应该被优先选择。
+使用 <code class="docutils literal notranslate"><span class="pre">format()</span></code> 方法还有一个好处就是你可以获得对字符串格式化的所有支持(对齐，填充，数字格式化等待)，
+而这些特性是使用像模板字符串之类的方案不可能获得的。</p>
+<p>本机还部分介绍了一些高级特性。映射或者字典类中鲜为人知的 <code class="docutils literal notranslate"><span class="pre">__missing__()</span></code> 方法可以让你定义如何处理缺失的值。
+在 <code class="docutils literal notranslate"><span class="pre">SafeSub</span></code> 类中，这个方法被定义为对缺失的值返回一个占位符。
+你可以发现缺失的值会出现在结果字符串中(在调试的时候可能很有用)，而不是产生一个 <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> 异常。</p>
+<p><code class="docutils literal notranslate"><span class="pre">sub()</span></code> 函数使用 <code class="docutils literal notranslate"><span class="pre">sys._getframe(1)</span></code> 返回调用者的栈帧。可以从中访问属性 <code class="docutils literal notranslate"><span class="pre">f_locals</span></code> 来获得局部变量。
+毫无疑问绝大部分情况下在代码中去直接操作栈帧应该是不推荐的。
+但是，对于像字符串替换工具函数而言它是非常有用的。
+另外，值得注意的是 <code class="docutils literal notranslate"><span class="pre">f_locals</span></code> 是一个复制调用函数的本地变量的字典。
+尽管你可以改变 <code class="docutils literal notranslate"><span class="pre">f_locals</span></code> 的内容，但是这个修改对于后面的变量访问没有任何影响。
+所以，虽说访问一个栈帧看上去很邪恶，但是对它的任何操作不会覆盖和改变调用者本地变量的值。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>3.1 数字的四舍五入 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p03_numbers_dates_times.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p03_numbers_dates_times.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>3.1 数字的四舍五入<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想对浮点数执行指定精度的舍入运算。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>对于简单的舍入运算，使用内置的 <code class="docutils literal notranslate"><span class="pre">round(value,</span> <span class="pre">ndigits)</span></code> 函数即可。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="mf">1.23</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">1.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="mf">1.27</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">1.3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="o">-</span><span class="mf">1.27</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">-1.3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="mf">1.25361</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">1.254</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>当一个值刚好在两个边界的中间的时候， <code class="docutils literal notranslate"><span class="pre">round</span></code> 函数返回离它最近的偶数。
+也就是说，对1.5或者2.5的舍入运算都会得到2。</p>
+<p>传给 <code class="docutils literal notranslate"><span class="pre">round()</span></code> 函数的 <code class="docutils literal notranslate"><span class="pre">ndigits</span></code> 参数可以是负数，这种情况下，
+舍入运算会作用在十位、百位、千位等上面。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="mi">1627731</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1627730</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1627700</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">1628000</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>不要将舍入和格式化输出搞混淆了。
+如果你的目的只是简单的输出一定宽度的数，你不需要使用 <code class="docutils literal notranslate"><span class="pre">round()</span></code> 函数。
+而仅仅只需要在格式化的时候指定精度即可。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="mf">1.23456</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'0.2f'</span><span class="p">)</span>
+<span class="go">'1.23'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'0.3f'</span><span class="p">)</span>
+<span class="go">'1.235'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">'value is {:0.3f}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">'value is 1.235'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>同样，不要试着去舍入浮点值来”修正”表面上看起来正确的问题。比如，你可能倾向于这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="mf">2.1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="mf">4.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span>
+<span class="go">6.300000000000001</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># "Fix" result (???)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span>
+<span class="go">6.3</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对于大多数使用到浮点的程序，没有必要也不推荐这样做。
+尽管在计算的时候会有一点点小的误差，但是这些小的误差是能被理解与容忍的。
+如果不能允许这样的小误差(比如涉及到金融领域)，那么就得考虑使用 <code class="docutils literal notranslate"><span class="pre">decimal</span></code> 模块了，下一节我们会详细讨论。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>2.20 字节字符串上的字符串操作 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p03_numbers_dates_times.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p03_numbers_dates_times.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>2.20 字节字符串上的字符串操作<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想在字节字符串上执行普通的文本操作(比如移除，搜索和替换)。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>字节字符串同样也支持大部分和文本字符串一样的内置操作。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">'Hello World'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+<span class="go">b'Hello'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello'</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="go">[b'Hello', b'World']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello'</span><span class="p">,</span> <span class="sa">b</span><span class="s1">'Hello Cruel'</span><span class="p">)</span>
+<span class="go">b'Hello Cruel World'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这些操作同样也适用于字节数组。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+<span class="go">bytearray(b'Hello')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello'</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="go">[bytearray(b'Hello'), bytearray(b'World')]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello'</span><span class="p">,</span> <span class="sa">b</span><span class="s1">'Hello Cruel'</span><span class="p">)</span>
+<span class="go">bytearray(b'Hello Cruel World')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>你可以使用正则表达式匹配字节字符串，但是正则表达式本身必须也是字节串。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt;
+&gt;&gt;&gt; data = b'FOO:BAR,SPAM'
+&gt;&gt;&gt; import re
+&gt;&gt;&gt; re.split('[:,]',data)
+Traceback (most recent call last):
+File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+File "/usr/local/lib/python3.3/re.py", line 191, in split
+return _compile(pattern, flags).split(string, maxsplit)
+TypeError: can't use a string pattern on a bytes-like object
+&gt;&gt;&gt; re.split(b'[:,]',data) # Notice: pattern as bytes
+[b'FOO', b'BAR', b'SPAM']
+&gt;&gt;&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>大多数情况下，在文本字符串上的操作均可用于字节字符串。
+然而，这里也有一些需要注意的不同点。首先，字节字符串的索引操作返回整数而不是单独字符。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="s1">'Hello World'</span> <span class="c1"># Text string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">'H'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">'e'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">'Hello World'</span> <span class="c1"># Byte string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">72</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">101</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这种语义上的区别会对于处理面向字节的字符数据有影响。</p>
+<p>第二点，字节字符串不会提供一个美观的字符串表示，也不能很好的打印出来，除非它们先被解码为一个文本字符串。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">'Hello World'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">b'Hello World' # Observe b'...'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'ascii'</span><span class="p">))</span>
+<span class="go">Hello World</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>类似的，也不存在任何适用于字节字符串的格式化操作：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="sa">b</span><span class="s1">'</span><span class="si">%10s</span><span class="s1"> </span><span class="si">%10d</span><span class="s1"> </span><span class="si">%10.2f</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="sa">b</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">490.1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for %: 'bytes' and 'tuple'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="sa">b</span><span class="s1">'{} {} {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="sa">b</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">490.1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="gr">AttributeError</span>: <span class="n">'bytes' object has no attribute 'format'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想格式化字节字符串，你得先使用标准的文本字符串，然后将其编码为字节字符串。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s1">'{:10s} {:10d} {:10.2f}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">490.1</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'ascii'</span><span class="p">)</span>
+<span class="go">b'ACME 100 490.10'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后需要注意的是，使用字节字符串可能会改变一些操作的语义，特别是那些跟文件系统有关的操作。
+比如，如果你使用一个编码为字节的文件名，而不是一个普通的文本字符串，会禁用文件名的编码/解码。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Write a UTF-8 filename</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'jalape</span><span class="se">\xf1</span><span class="s1">o.txt'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'spicy'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get a directory listing</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span> <span class="c1"># Text string (names are decoded)</span>
+<span class="go">['jalapeño.txt']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="sa">b</span><span class="s1">'.'</span><span class="p">)</span> <span class="c1"># Byte string (names left as bytes)</span>
+<span class="go">[b'jalapen\xcc\x83o.txt']</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>注意例子中的最后部分给目录名传递一个字节字符串是怎样导致结果中文件名以未解码字节返回的。
+在目录中的文件名包含原始的UTF-8编码。
+参考5.15小节获取更多文件名相关的内容。</p>
+<p>最后提一点，一些程序员为了提升程序执行的速度会倾向于使用字节字符串而不是文本字符串。
+尽管操作字节字符串确实会比文本更加高效(因为处理文本固有的Unicode相关开销)。
+这样做通常会导致非常杂乱的代码。你会经常发现字节字符串并不能和Python的其他部分工作的很好，
+并且你还得手动处理所有的编码/解码操作。
+坦白讲，如果你在处理文本的话，就直接在程序中使用普通的文本字符串而不是字节字符串。不做死就不会死！</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

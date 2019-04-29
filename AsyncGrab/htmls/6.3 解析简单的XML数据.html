@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>6.3 解析简单的XML数据 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="xml">
+<h1>6.3 解析简单的XML数据<a class="headerlink" href="#xml" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想从一个简单的XML文档中提取数据。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>可以使用 <code class="docutils literal notranslate"><span class="pre">xml.etree.ElementTree</span></code> 模块从简单的XML文档中提取数据。
+为了演示，假设你想解析Planet Python上的RSS源。下面是相应的代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">urllib.request</span> <span class="kn">import</span> <span class="n">urlopen</span>
+<span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">parse</span>
+
+<span class="c1"># Download the RSS feed and parse it</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">urlopen</span><span class="p">(</span><span class="s1">'http://planet.python.org/rss20.xml'</span><span class="p">)</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+<span class="c1"># Extract and output tags of interest</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">iterfind</span><span class="p">(</span><span class="s1">'channel/item'</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">'title'</span><span class="p">)</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">'pubDate'</span><span class="p">)</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">'link'</span><span class="p">)</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>运行上面的代码，输出结果类似这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Steve</span> <span class="n">Holden</span><span class="p">:</span> <span class="n">Python</span> <span class="k">for</span> <span class="n">Data</span> <span class="n">Analysis</span>
+<span class="n">Mon</span><span class="p">,</span> <span class="mi">19</span> <span class="n">Nov</span> <span class="mi">2012</span> <span class="mo">02</span><span class="p">:</span><span class="mi">13</span><span class="p">:</span><span class="mi">51</span> <span class="o">+</span><span class="mo">0000</span>
+<span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">holdenweb</span><span class="o">.</span><span class="n">blogspot</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="mi">2012</span><span class="o">/</span><span class="mi">11</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="k">for</span><span class="o">-</span><span class="n">data</span><span class="o">-</span><span class="n">analysis</span><span class="o">.</span><span class="n">html</span>
+
+<span class="n">Vasudev</span> <span class="n">Ram</span><span class="p">:</span> <span class="n">The</span> <span class="n">Python</span> <span class="n">Data</span> <span class="n">model</span> <span class="p">(</span><span class="k">for</span> <span class="n">v2</span> <span class="ow">and</span> <span class="n">v3</span><span class="p">)</span>
+<span class="n">Sun</span><span class="p">,</span> <span class="mi">18</span> <span class="n">Nov</span> <span class="mi">2012</span> <span class="mi">22</span><span class="p">:</span><span class="mo">06</span><span class="p">:</span><span class="mi">47</span> <span class="o">+</span><span class="mo">0000</span>
+<span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">jugad2</span><span class="o">.</span><span class="n">blogspot</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="mi">2012</span><span class="o">/</span><span class="mi">11</span><span class="o">/</span><span class="n">the</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">data</span><span class="o">-</span><span class="n">model</span><span class="o">.</span><span class="n">html</span>
+
+<span class="n">Python</span> <span class="n">Diary</span><span class="p">:</span> <span class="n">Been</span> <span class="n">playing</span> <span class="n">around</span> <span class="k">with</span> <span class="n">Object</span> <span class="n">Databases</span>
+<span class="n">Sun</span><span class="p">,</span> <span class="mi">18</span> <span class="n">Nov</span> <span class="mi">2012</span> <span class="mi">20</span><span class="p">:</span><span class="mi">40</span><span class="p">:</span><span class="mi">29</span> <span class="o">+</span><span class="mo">0000</span>
+<span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">pythondiary</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">blog</span><span class="o">/</span><span class="n">Nov</span><span class="o">.</span><span class="mi">18</span><span class="p">,</span><span class="mi">2012</span><span class="o">/</span><span class="n">been</span><span class="o">-...-</span><span class="nb">object</span><span class="o">-</span><span class="n">databases</span><span class="o">.</span><span class="n">html</span>
+
+<span class="n">Vasudev</span> <span class="n">Ram</span><span class="p">:</span> <span class="n">Wakari</span><span class="p">,</span> <span class="n">Scientific</span> <span class="n">Python</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">cloud</span>
+<span class="n">Sun</span><span class="p">,</span> <span class="mi">18</span> <span class="n">Nov</span> <span class="mi">2012</span> <span class="mi">20</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">41</span> <span class="o">+</span><span class="mo">0000</span>
+<span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">jugad2</span><span class="o">.</span><span class="n">blogspot</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="mi">2012</span><span class="o">/</span><span class="mi">11</span><span class="o">/</span><span class="n">wakari</span><span class="o">-</span><span class="n">scientific</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">cloud</span><span class="o">.</span><span class="n">html</span>
+
+<span class="n">Jesse</span> <span class="n">Jiryu</span> <span class="n">Davis</span><span class="p">:</span> <span class="n">Toro</span><span class="p">:</span> <span class="n">synchronization</span> <span class="n">primitives</span> <span class="k">for</span> <span class="n">Tornado</span> <span class="n">coroutines</span>
+<span class="n">Sun</span><span class="p">,</span> <span class="mi">18</span> <span class="n">Nov</span> <span class="mi">2012</span> <span class="mi">20</span><span class="p">:</span><span class="mi">17</span><span class="p">:</span><span class="mi">49</span> <span class="o">+</span><span class="mo">0000</span>
+<span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">feedproxy</span><span class="o">.</span><span class="n">google</span><span class="o">.</span><span class="n">com</span><span class="o">/~</span><span class="n">r</span><span class="o">/</span><span class="n">EmptysquarePython</span><span class="o">/~</span><span class="mi">3</span><span class="o">/</span><span class="n">_DOZT2Kd0hQ</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>很显然，如果你想做进一步的处理，你需要替换 <code class="docutils literal notranslate"><span class="pre">print()</span></code> 语句来完成其他有趣的事。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>在很多应用程序中处理XML编码格式的数据是很常见的。
+不仅因为XML在Internet上面已经被广泛应用于数据交换，
+同时它也是一种存储应用程序数据的常用格式(比如字处理，音乐库等)。
+接下来的讨论会先假定读者已经对XML基础比较熟悉了。</p>
+<p>在很多情况下，当使用XML来仅仅存储数据的时候，对应的文档结构非常紧凑并且直观。
+例如，上面例子中的RSS订阅源类似于下面的格式：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>&lt;?xml version="1.0"?&gt;
+&lt;rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;
+    &lt;channel&gt;
+        &lt;title&gt;Planet Python&lt;/title&gt;
+        &lt;link&gt;http://planet.python.org/&lt;/link&gt;
+        &lt;language&gt;en&lt;/language&gt;
+        &lt;description&gt;Planet Python - http://planet.python.org/&lt;/description&gt;
+        &lt;item&gt;
+            &lt;title&gt;Steve Holden: Python for Data Analysis&lt;/title&gt;
+            &lt;guid&gt;http://holdenweb.blogspot.com/...-data-analysis.html&lt;/guid&gt;
+            &lt;link&gt;http://holdenweb.blogspot.com/...-data-analysis.html&lt;/link&gt;
+            &lt;description&gt;...&lt;/description&gt;
+            &lt;pubDate&gt;Mon, 19 Nov 2012 02:13:51 +0000&lt;/pubDate&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+            &lt;title&gt;Vasudev Ram: The Python Data model (for v2 and v3)&lt;/title&gt;
+            &lt;guid&gt;http://jugad2.blogspot.com/...-data-model.html&lt;/guid&gt;
+            &lt;link&gt;http://jugad2.blogspot.com/...-data-model.html&lt;/link&gt;
+            &lt;description&gt;...&lt;/description&gt;
+            &lt;pubDate&gt;Sun, 18 Nov 2012 22:06:47 +0000&lt;/pubDate&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+            &lt;title&gt;Python Diary: Been playing around with Object Databases&lt;/title&gt;
+            &lt;guid&gt;http://www.pythondiary.com/...-object-databases.html&lt;/guid&gt;
+            &lt;link&gt;http://www.pythondiary.com/...-object-databases.html&lt;/link&gt;
+            &lt;description&gt;...&lt;/description&gt;
+            &lt;pubDate&gt;Sun, 18 Nov 2012 20:40:29 +0000&lt;/pubDate&gt;
+        &lt;/item&gt;
+        ...
+    &lt;/channel&gt;
+&lt;/rss&gt;
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">xml.etree.ElementTree.parse()</span></code> 函数解析整个XML文档并将其转换成一个文档对象。
+然后，你就能使用 <code class="docutils literal notranslate"><span class="pre">find()</span></code> 、<code class="docutils literal notranslate"><span class="pre">iterfind()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">findtext()</span></code> 等方法来搜索特定的XML元素了。
+这些函数的参数就是某个指定的标签名，例如 <code class="docutils literal notranslate"><span class="pre">channel/item</span></code> 或 <code class="docutils literal notranslate"><span class="pre">title</span></code> 。</p>
+<p>每次指定某个标签时，你需要遍历整个文档结构。每次搜索操作会从一个起始元素开始进行。
+同样，每次操作所指定的标签名也是起始元素的相对路径。
+例如，执行 <code class="docutils literal notranslate"><span class="pre">doc.iterfind('channel/item')</span></code> 来搜索所有在 <code class="docutils literal notranslate"><span class="pre">channel</span></code> 元素下面的 <code class="docutils literal notranslate"><span class="pre">item</span></code> 元素。
+<code class="docutils literal notranslate"><span class="pre">doc</span></code> 代表文档的最顶层(也就是第一级的 <code class="docutils literal notranslate"><span class="pre">rss</span></code> 元素)。
+然后接下来的调用 <code class="docutils literal notranslate"><span class="pre">item.findtext()</span></code> 会从已找到的 <code class="docutils literal notranslate"><span class="pre">item</span></code> 元素位置开始搜索。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ElementTree</span></code> 模块中的每个元素有一些重要的属性和方法，在解析的时候非常有用。
+<code class="docutils literal notranslate"><span class="pre">tag</span></code> 属性包含了标签的名字，<code class="docutils literal notranslate"><span class="pre">text</span></code> 属性包含了内部的文本，而 <code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法能获取属性值。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">doc</span>
+<span class="go">&lt;xml.etree.ElementTree.ElementTree object at 0x101339510&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">'channel/title'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span>
+<span class="go">&lt;Element 'title' at 0x10135b310&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">tag</span>
+<span class="go">'title'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">text</span>
+<span class="go">'Planet Python'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'some_attribute'</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>有一点要强调的是 <code class="docutils literal notranslate"><span class="pre">xml.etree.ElementTree</span></code> 并不是XML解析的唯一方法。
+对于更高级的应用程序，你需要考虑使用 <code class="docutils literal notranslate"><span class="pre">lxml</span></code> 。
+它使用了和ElementTree同样的编程接口，因此上面的例子同样也适用于lxml。
+你只需要将刚开始的import语句换成 <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">lxml.etree</span> <span class="pre">import</span> <span class="pre">parse</span></code> 就行了。
+<code class="docutils literal notranslate"><span class="pre">lxml</span></code> 完全遵循XML标准，并且速度也非常快，同时还支持验证，XSLT，和XPath等特性。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

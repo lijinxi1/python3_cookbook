@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>9.2 创建装饰器时保留函数元信息 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>9.2 创建装饰器时保留函数元信息<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你写了一个装饰器作用在某个函数上，但是这个函数的重要的元信息比如名字、文档字符串、注解和参数签名都丢失了。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>任何时候你定义装饰器的时候，都应该使用 <code class="docutils literal notranslate"><span class="pre">functools</span></code> 库中的 <code class="docutils literal notranslate"><span class="pre">@wraps</span></code> 装饰器来注解底层包装函数。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="k">def</span> <span class="nf">timethis</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Decorator that reports the execution time.</span>
+<span class="sd">    '''</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+</pre></div>
+</div>
+<p>下面我们使用这个被包装后的函数并检查它的元信息：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@timethis</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="sd">'''</span>
+<span class="gp">... </span><span class="sd">    Counts down</span>
+<span class="gp">... </span><span class="sd">    '''</span>
+<span class="gp">... </span>    <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+<span class="go">countdown 0.008917808532714844</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="vm">__name__</span>
+<span class="go">'countdown'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="vm">__doc__</span>
+<span class="go">'\n\tCounts down\n\t'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="n">__annotations__</span>
+<span class="go">{'n': &lt;class 'int'&gt;}</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>在编写装饰器的时候复制元信息是一个非常重要的部分。如果你忘记了使用 <code class="docutils literal notranslate"><span class="pre">@wraps</span></code> ，
+那么你会发现被装饰函数丢失了所有有用的信息。比如如果忽略 <code class="docutils literal notranslate"><span class="pre">@wraps</span></code> 后的效果是下面这样的：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="vm">__name__</span>
+<span class="go">'wrapper'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="vm">__doc__</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="n">__annotations__</span>
+<span class="go">{}</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">@wraps</span></code> 有一个重要特征是它能让你通过属性 <code class="docutils literal notranslate"><span class="pre">__wrapped__</span></code> 直接访问被包装函数。例如:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="n">__wrapped__</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__wrapped__</span></code> 属性还能让被装饰函数正确暴露底层的参数签名信息。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">countdown</span><span class="p">))</span>
+<span class="go">(n:int)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>一个很普遍的问题是怎样让装饰器去直接复制原始函数的参数签名信息，
+如果想自己手动实现的话需要做大量的工作，最好就简单的使用 <code class="docutils literal notranslate"><span class="pre">@wraps</span></code> 装饰器。
+通过底层的 <code class="docutils literal notranslate"><span class="pre">__wrapped__</span></code> 属性访问到函数签名信息。更多关于签名的内容可以参考9.16小节。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

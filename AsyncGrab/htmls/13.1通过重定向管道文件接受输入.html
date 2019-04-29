@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>13.1 通过重定向/管道/文件接受输入 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p13_utility_script_and_system_manage.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p13_utility_script_and_system_manage.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>13.1 通过重定向/管道/文件接受输入<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你希望你的脚本接受任何用户认为最简单的输入方式。包括将命令行的输出通过管道传递给该脚本、
+重定向文件到该脚本，或在命令行中传递一个文件名或文件名列表给该脚本。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Python内置的 <code class="docutils literal notranslate"><span class="pre">fileinput</span></code> 模块让这个变得简单。如果你有一个下面这样的脚本：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="kn">import</span> <span class="nn">fileinput</span>
+
+<span class="k">with</span> <span class="n">fileinput</span><span class="o">.</span><span class="n">input</span><span class="p">()</span> <span class="k">as</span> <span class="n">f_input</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f_input</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>那么你就能以前面提到的所有方式来为此脚本提供输入。假设你将此脚本保存为 <code class="docutils literal notranslate"><span class="pre">filein.py</span></code> 并将其变为可执行文件，
+那么你可以像下面这样调用它，得到期望的输出：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ ls <span class="p">|</span> ./filein.py          <span class="c1"># Prints a directory listing to stdout.</span>
+$ ./filein.py /etc/passwd   <span class="c1"># Reads /etc/passwd to stdout.</span>
+$ ./filein.py &lt; /etc/passwd <span class="c1"># Reads /etc/passwd to stdout.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">fileinput.input()</span></code> 创建并返回一个 <code class="docutils literal notranslate"><span class="pre">FileInput</span></code> 类的实例。
+该实例除了拥有一些有用的帮助方法外，它还可被当做一个上下文管理器使用。
+因此，整合起来，如果我们要写一个打印多个文件输出的脚本，那么我们需要在输出中包含文件名和行号，如下所示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fileinput</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">fileinput</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">'/etc/passwd'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">filename</span><span class="p">(),</span> <span class="n">f</span><span class="o">.</span><span class="n">lineno</span><span class="p">(),</span> <span class="n">line</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">/etc/passwd 1 ##</span>
+<span class="go">/etc/passwd 2 # User Database</span>
+<span class="go">/etc/passwd 3 #</span>
+
+<span class="go">&lt;other output omitted&gt;</span>
+</pre></div>
+</div>
+<p>通过将它作为一个上下文管理器使用，可以确保它不再使用时文件能自动关闭，
+而且我们在之后还演示了 <code class="docutils literal notranslate"><span class="pre">FileInput</span></code> 的一些有用的帮助方法来获取输出中的一些其他信息。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

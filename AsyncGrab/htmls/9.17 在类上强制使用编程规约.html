@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>9.17 在类上强制使用编程规约 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>9.17 在类上强制使用编程规约<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你的程序包含一个很大的类继承体系，你希望强制执行某些编程规约（或者代码诊断）来帮助程序员保持清醒。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>如果你想监控类的定义，通常可以通过定义一个元类。一个基本元类通常是继承自 <code class="docutils literal notranslate"><span class="pre">type</span></code> 并重定义它的 <code class="docutils literal notranslate"><span class="pre">__new__()</span></code> 方法
+或者是 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="c1"># clsname is name of class being defined</span>
+        <span class="c1"># bases is tuple of base classes</span>
+        <span class="c1"># clsdict is class dictionary</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>另一种是，定义 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">)</span>
+        <span class="c1"># clsname is name of class being defined</span>
+        <span class="c1"># bases is tuple of base classes</span>
+        <span class="c1"># clsdict is class dictionary</span>
+</pre></div>
+</div>
+<p>为了使用这个元类，你通常要将它放到到一个顶级父类定义中，然后其他的类继承这个顶级父类。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Root</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MyMeta</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">Root</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">Root</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>元类的一个关键特点是它允许你在定义的时候检查类的内容。在重新定义 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法中，
+你可以很轻松的检查类字典、父类等等。并且，一旦某个元类被指定给了某个类，那么就会被继承到所有子类中去。
+因此，一个框架的构建者就能在大型的继承体系中通过给一个顶级父类指定一个元类去捕获所有下面子类的定义。</p>
+<p>作为一个具体的应用例子，下面定义了一个元类，它会拒绝任何有混合大小写名字作为方法的类定义（可能是想气死Java程序员^_^）：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NoMixedCaseMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">clsdict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Bad attribute name: '</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Root</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">NoMixedCaseMeta</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">Root</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">foo_bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># Ok</span>
+        <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">Root</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fooBar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1"># TypeError</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>作为更高级和实用的例子，下面有一个元类，它用来检测重载方法，确保它的调用参数跟父类中原始方法有着相同的参数签名。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="k">class</span> <span class="nc">MatchSignaturesMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">)</span>
+        <span class="n">sup</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">clsdict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'_'</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="c1"># Get the previous definition (if any) and compare the signatures</span>
+            <span class="n">prev_dfn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sup</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">prev_dfn</span><span class="p">:</span>
+                <span class="n">prev_sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">prev_dfn</span><span class="p">)</span>
+                <span class="n">val_sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prev_sig</span> <span class="o">!=</span> <span class="n">val_sig</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'Signature mismatch in </span><span class="si">%s</span><span class="s1">. </span><span class="si">%s</span><span class="s1"> != </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span>
+                                    <span class="n">value</span><span class="o">.</span><span class="n">__qualname__</span><span class="p">,</span> <span class="n">prev_sig</span><span class="p">,</span> <span class="n">val_sig</span><span class="p">)</span>
+
+<span class="c1"># Example</span>
+<span class="k">class</span> <span class="nc">Root</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">MatchSignaturesMeta</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">Root</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Class with redefined methods, but slightly different signatures</span>
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">z</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>如果你运行这段代码，就会得到下面这样的输出结果：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">WARNING</span><span class="p">:</span><span class="n">root</span><span class="p">:</span><span class="n">Signature</span> <span class="n">mismatch</span> <span class="ow">in</span> <span class="n">B</span><span class="o">.</span><span class="n">spam</span><span class="o">.</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+<span class="n">WARNING</span><span class="p">:</span><span class="n">root</span><span class="p">:</span><span class="n">Signature</span> <span class="n">mismatch</span> <span class="ow">in</span> <span class="n">B</span><span class="o">.</span><span class="n">foo</span><span class="o">.</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这种警告信息对于捕获一些微妙的程序bug是很有用的。例如，如果某个代码依赖于传递给方法的关键字参数，
+那么当子类改变参数名字的时候就会调用出错。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>在大型面向对象的程序中，通常将类的定义放在元类中控制是很有用的。
+元类可以监控类的定义，警告编程人员某些没有注意到的可能出现的问题。</p>
+<p>有人可能会说，像这样的错误可以通过程序分析工具或IDE去做会更好些。诚然，这些工具是很有用。
+但是，如果你在构建一个框架或函数库供其他人使用，那么你没办法去控制使用者要使用什么工具。
+因此，对于这种类型的程序，如果可以在元类中做检测或许可以带来更好的用户体验。</p>
+<p>在元类中选择重新定义 <code class="docutils literal notranslate"><span class="pre">__new__()</span></code> 方法还是 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法取决于你想怎样使用结果类。
+<code class="docutils literal notranslate"><span class="pre">__new__()</span></code> 方法在类创建之前被调用，通常用于通过某种方式（比如通过改变类字典的内容）修改类的定义。
+而 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法是在类被创建之后被调用，当你需要完整构建类对象的时候会很有用。
+在最后一个例子中，这是必要的，因为它使用了 <code class="docutils literal notranslate"><span class="pre">super()</span></code> 函数来搜索之前的定义。
+它只能在类的实例被创建之后，并且相应的方法解析顺序也已经被设置好了。</p>
+<p>最后一个例子还演示了Python的函数签名对象的使用。
+实际上，元类将每个可调用定义放在一个类中，搜索前一个定义（如果有的话），
+然后通过使用 <code class="docutils literal notranslate"><span class="pre">inspect.signature()</span></code> 来简单的比较它们的调用签名。</p>
+<p>最后一点，代码中有一行使用了 <code class="docutils literal notranslate"><span class="pre">super(self,</span> <span class="pre">self)</span></code> 并不是排版错误。
+当使用元类的时候，我们要时刻记住一点就是 <code class="docutils literal notranslate"><span class="pre">self</span></code> 实际上是一个类对象。
+因此，这条语句其实就是用来寻找位于继承体系中构建 <code class="docutils literal notranslate"><span class="pre">self</span></code> 父类的定义。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

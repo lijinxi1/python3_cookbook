@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>第十二章：并发编程 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c11/p13_sending_receiving_large_arrays.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c11/p13_sending_receiving_large_arrays.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>第十二章：并发编程<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<p>对于并发编程, Python有多种长期支持的方法, 包括多线程, 调用子进程, 以及各种各样的关于生成器函数的技巧.
+这一章将会给出并发编程各种方面的技巧, 包括通用的多线程技术以及并行计算的实现方法.</p>
+<p>像经验丰富的程序员所知道的那样, 大家担心并发的程序有潜在的危险.
+因此, 本章的主要目标之一是给出更加可信赖和易调试的代码.</p>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p01_start_stop_thread.html">12.1 启动与停止线程</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p02_determining_if_thread_has_started.html">12.2 判断线程是否已经启动</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p03_communicating_between_threads.html">12.3 线程间通信</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p04_locking_critical_sections.html">12.4 给关键部分加锁</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p05_locking_with_deadlock_avoidance.html">12.5 防止死锁的加锁机制</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p06_storing_thread_specific_state.html">12.6 保存线程的状态信息</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p07_creating_thread_pool.html">12.7 创建一个线程池</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p08_perform_simple_parallel_programming.html">12.8 简单的并行编程</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p09_dealing_with_gil_stop_worring_about_it.html">12.9 Python的全局锁问题</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p10_defining_an_actor_task.html">12.10 定义一个Actor任务</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p11_implement_publish_subscribe_messaging.html">12.11 实现消息发布/订阅模型</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p12_using_generators_as_alternative_to_threads.html">12.12 使用生成器代替线程</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p13_polling_multiple_thread_queues.html">12.13 多个线程队列轮询</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c12/p14_launching_daemon_process_on_unix.html">12.14 在Unix系统上面启动守护进程</a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

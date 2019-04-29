@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.11 简化数据结构的初始化 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.11 简化数据结构的初始化<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你写了很多仅仅用作数据结构的类，不想写太多烦人的 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 函数</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>可以在一个基类中写一个公用的 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
+
+<span class="k">class</span> <span class="nc">Structure1</span><span class="p">:</span>
+    <span class="c1"># Class variable that specifies expected fields</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected {} arguments'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)))</span>
+        <span class="c1"># Set the arguments</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>然后使你的类继承自这个基类:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example class definitions</span>
+<span class="k">class</span> <span class="nc">Stock</span><span class="p">(</span><span class="n">Structure1</span><span class="p">):</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="n">Structure1</span><span class="p">):</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">Circle</span><span class="p">(</span><span class="n">Structure1</span><span class="p">):</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'radius'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">**</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>使用这些类的示例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">91.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">Circle</span><span class="p">(</span><span class="mf">4.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"structure.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__init__</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected {} arguments'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)))</span>
+<span class="gr">TypeError</span>: <span class="n">Expected 3 arguments</span>
+</pre></div>
+</div>
+<p>如果还想支持关键字参数，可以将关键字参数设置为实例属性：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Structure2</span><span class="p">:</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected {} arguments'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)))</span>
+
+        <span class="c1"># Set all of the positional arguments</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Set the remaining keyword arguments</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):]:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="c1"># Check for any remaining unknown arguments</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Invalid argument(s): {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)))</span>
+<span class="c1"># Example use</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Stock</span><span class="p">(</span><span class="n">Structure2</span><span class="p">):</span>
+        <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">]</span>
+
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">91.1</span><span class="p">)</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="mf">91.1</span><span class="p">)</span>
+    <span class="n">s3</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="mf">91.1</span><span class="p">)</span>
+    <span class="c1"># s3 = Stock('ACME', shares=50, price=91.1, aa=1)</span>
+</pre></div>
+</div>
+<p>你还能将不在 <code class="docutils literal notranslate"><span class="pre">_fields</span></code> 中的名称加入到属性中去：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Structure3</span><span class="p">:</span>
+    <span class="c1"># Class variable that specifies expected fields</span>
+    <span class="n">_fields</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected {} arguments'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)))</span>
+
+        <span class="c1"># Set the arguments</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Set the additional arguments (if any)</span>
+        <span class="n">extra_args</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">extra_args</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Duplicate values for {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)))</span>
+
+<span class="c1"># Example use</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Stock</span><span class="p">(</span><span class="n">Structure3</span><span class="p">):</span>
+        <span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">]</span>
+
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">91.1</span><span class="p">)</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'ACME'</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mf">91.1</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s1">'8/2/2012'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>当你需要使用大量很小的数据结构类的时候，
+相比手工一个个定义 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法而已，使用这种方式可以大大简化代码。</p>
+<p>在上面的实现中我们使用了 <code class="docutils literal notranslate"><span class="pre">setattr()</span></code> 函数类设置属性值，
+你可能不想用这种方式，而是想直接更新实例字典，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Structure</span><span class="p">:</span>
+    <span class="c1"># Class variable that specifies expected fields</span>
+    <span class="n">_fields</span><span class="o">=</span> <span class="p">[]</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected {} arguments'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)))</span>
+
+        <span class="c1"># Set the arguments (alternate)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">,</span><span class="n">args</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>尽管这也可以正常工作，但是当定义子类的时候问题就来了。
+当一个子类定义了 <code class="docutils literal notranslate"><span class="pre">__slots__</span></code> 或者通过property(或描述器)来包装某个属性，
+那么直接访问实例字典就不起作用了。我们上面使用 <code class="docutils literal notranslate"><span class="pre">setattr()</span></code> 会显得更通用些，因为它也适用于子类情况。</p>
+<p>这种方法唯一不好的地方就是对某些IDE而言，在显示帮助函数时可能不太友好。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">Stock</span><span class="p">)</span>
+<span class="go">Help on class Stock in module __main__:</span>
+<span class="go">class Stock(Structure)</span>
+<span class="gp">...</span>
+<span class="go">| Methods inherited from Structure:</span>
+<span class="go">|</span>
+<span class="go">| __init__(self, *args, **kwargs)</span>
+<span class="go">|</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>可以参考9.16小节来强制在 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法中指定参数的类型签名。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

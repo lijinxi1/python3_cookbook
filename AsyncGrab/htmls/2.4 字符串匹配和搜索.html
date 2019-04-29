@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>2.4 字符串匹配和搜索 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>2.4 字符串匹配和搜索<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想匹配或者搜索特定模式的文本</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>如果你想匹配的是字面字符串，那么你通常只需要调用基本字符串方法就行，
+比如 <code class="docutils literal notranslate"><span class="pre">str.find()</span></code> , <code class="docutils literal notranslate"><span class="pre">str.endswith()</span></code> , <code class="docutils literal notranslate"><span class="pre">str.startswith()</span></code> 或者类似的方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="s1">'yeah, but no, but yeah, but no, but yeah'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Exact match</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">==</span> <span class="s1">'yeah'</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Match at start or end</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'yeah'</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Search for the location of the first occurrence</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="go">10</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对于复杂的匹配需要使用正则表达式和 <code class="docutils literal notranslate"><span class="pre">re</span></code> 模块。
+为了解释正则表达式的基本原理，假设你想匹配数字格式的日期字符串比如 <code class="docutils literal notranslate"><span class="pre">11/27/2012</span></code> ，你可以这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">text1</span> <span class="o">=</span> <span class="s1">'11/27/2012'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text2</span> <span class="o">=</span> <span class="s1">'Nov 27, 2012'</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">re</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple matching: \d+ means match one or more digits</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+/\d+/\d+'</span><span class="p">,</span> <span class="n">text1</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'yes'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">yes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+/\d+/\d+'</span><span class="p">,</span> <span class="n">text2</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'yes'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">no</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想使用同一个模式去做多次匹配，你应该先将模式字符串预编译为模式对象。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+/\d+/\d+'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text1</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'yes'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">yes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text2</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'yes'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'no'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">no</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">match()</span></code> 总是从字符串开始去匹配，如果你想查找字符串任意部分的模式出现位置，
+使用 <code class="docutils literal notranslate"><span class="pre">findall()</span></code> 方法去代替。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="s1">'Today is 11/27/2012. PyCon starts 3/13/2013.'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="go">['11/27/2012', '3/13/2013']</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>在定义正则式的时候，通常会利用括号去捕获分组。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(\d+)/(\d+)/(\d+)'</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>捕获分组可以使得后面的处理更加简单，因为可以分别将每个组的内容提取出来。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">'11/27/2012'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span>
+<span class="go">&lt;_sre.SRE_Match object at 0x1005d2750&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Extract the contents of each group</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">'11/27/2012'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">'11'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">'27'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">'2012'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+<span class="go">('11', '27', '2012')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">year</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Find all matches (notice splitting into tuples)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span>
+<span class="go">'Today is 11/27/2012. PyCon starts 3/13/2013.'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="go">[('11', '27', '2012'), ('3', '13', '2013')]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">datepat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'{}-{}-{}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="go">2012-11-27</span>
+<span class="go">2013-3-13</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">findall()</span></code> 方法会搜索文本并以列表形式返回所有的匹配。
+如果你想以迭代方式返回匹配，可以使用 <code class="docutils literal notranslate"><span class="pre">finditer()</span></code> 方法来代替，比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">datepat</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>
+<span class="gp">...</span>
+<span class="go">('11', '27', '2012')</span>
+<span class="go">('3', '13', '2013')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>关于正则表达式理论的教程已经超出了本书的范围。
+不过，这一节阐述了使用re模块进行匹配和搜索文本的最基本方法。
+核心步骤就是先使用 <code class="docutils literal notranslate"><span class="pre">re.compile()</span></code> 编译正则表达式字符串，
+然后使用 <code class="docutils literal notranslate"><span class="pre">match()</span></code> , <code class="docutils literal notranslate"><span class="pre">findall()</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">finditer()</span></code> 等方法。</p>
+<p>当写正则式字符串的时候，相对普遍的做法是使用原始字符串比如 <code class="docutils literal notranslate"><span class="pre">r'(\d+)/(\d+)/(\d+)'</span></code> 。
+这种字符串将不去解析反斜杠，这在正则表达式中是很有用的。
+如果不这样做的话，你必须使用两个反斜杠，类似 <code class="docutils literal notranslate"><span class="pre">'(\\d+)/(\\d+)/(\\d+)'</span></code> 。</p>
+<p>需要注意的是 <code class="docutils literal notranslate"><span class="pre">match()</span></code> 方法仅仅检查字符串的开始部分。它的匹配结果有可能并不是你期望的那样。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">'11/27/2012abcdef'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span>
+<span class="go">&lt;_sre.SRE_Match object at 0x1005d27e8&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+<span class="go">'11/27/2012'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想精确匹配，确保你的正则表达式以$结尾，就像这么这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(\d+)/(\d+)/(\d+)$'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">'11/27/2012abcdef'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">datepat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">'11/27/2012'</span><span class="p">)</span>
+<span class="go">&lt;_sre.SRE_Match object at 0x1005d2750&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后，如果你仅仅是做一次简单的文本匹配/搜索操作的话，可以略过编译部分，直接使用 <code class="docutils literal notranslate"><span class="pre">re</span></code> 模块级别的函数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(\d+)/(\d+)/(\d+)'</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+<span class="go">[('11', '27', '2012'), ('3', '13', '2013')]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>但是需要注意的是，如果你打算做大量的匹配和搜索操作的话，最好先编译正则表达式，然后再重复使用它。
+模块级别的函数会将最近编译过的模式缓存起来，因此并不会消耗太多的性能，
+但是如果使用预编译模式的话，你将会减少查找和一些额外的处理损耗。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

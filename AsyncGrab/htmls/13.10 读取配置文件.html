@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>13.10 读取配置文件 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>13.10 读取配置文件<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>怎样读取普通.ini格式的配置文件？</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">configparser</span></code> 模块能被用来读取配置文件。例如，假设你有如下的配置文件：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">;</span> <span class="n">config</span><span class="o">.</span><span class="n">ini</span>
+<span class="p">;</span> <span class="n">Sample</span> <span class="n">configuration</span> <span class="n">file</span>
+
+<span class="p">[</span><span class="n">installation</span><span class="p">]</span>
+<span class="n">library</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">lib</span>
+<span class="n">include</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">include</span>
+<span class="nb">bin</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="nb">bin</span>
+<span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+
+<span class="c1"># Setting related to debug configuration</span>
+<span class="p">[</span><span class="n">debug</span><span class="p">]</span>
+<span class="n">log_errors</span><span class="o">=</span><span class="n">true</span>
+<span class="n">show_warnings</span><span class="o">=</span><span class="kc">False</span>
+
+<span class="p">[</span><span class="n">server</span><span class="p">]</span>
+<span class="n">port</span><span class="p">:</span> <span class="mi">8080</span>
+<span class="n">nworkers</span><span class="p">:</span> <span class="mi">32</span>
+<span class="n">pid</span><span class="o">-</span><span class="n">file</span><span class="o">=/</span><span class="n">tmp</span><span class="o">/</span><span class="n">spam</span><span class="o">.</span><span class="n">pid</span>
+<span class="n">root</span><span class="o">=/</span><span class="n">www</span><span class="o">/</span><span class="n">root</span>
+<span class="n">signature</span><span class="p">:</span>
+    <span class="o">=================================</span>
+    <span class="n">Brought</span> <span class="n">to</span> <span class="n">you</span> <span class="n">by</span> <span class="n">the</span> <span class="n">Python</span> <span class="n">Cookbook</span>
+    <span class="o">=================================</span>
+</pre></div>
+</div>
+<p>下面是一个读取和提取其中值的例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">'config.ini'</span><span class="p">)</span>
+<span class="go">['config.ini']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">sections</span><span class="p">()</span>
+<span class="go">['installation', 'debug', 'server']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'library'</span><span class="p">)</span>
+<span class="go">'/usr/local/lib'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s1">'debug'</span><span class="p">,</span><span class="s1">'log_errors'</span><span class="p">)</span>
+
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span><span class="s1">'server'</span><span class="p">,</span><span class="s1">'port'</span><span class="p">)</span>
+<span class="go">8080</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span><span class="s1">'server'</span><span class="p">,</span><span class="s1">'nworkers'</span><span class="p">)</span>
+<span class="go">32</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'server'</span><span class="p">,</span><span class="s1">'signature'</span><span class="p">))</span>
+
+<span class="go">\=================================</span>
+<span class="go">Brought to you by the Python Cookbook</span>
+<span class="go">\=================================</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果有需要，你还能修改配置并使用 <code class="docutils literal notranslate"><span class="pre">cfg.write()</span></code> 方法将其写回到文件中。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">'server'</span><span class="p">,</span><span class="s1">'port'</span><span class="p">,</span><span class="s1">'9000'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">'debug'</span><span class="p">,</span><span class="s1">'log_errors'</span><span class="p">,</span><span class="s1">'False'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">installation</span><span class="p">]</span>
+<span class="n">library</span> <span class="o">=</span> <span class="o">%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">lib</span>
+<span class="n">include</span> <span class="o">=</span> <span class="o">%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">include</span>
+<span class="nb">bin</span> <span class="o">=</span> <span class="o">%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="nb">bin</span>
+<span class="n">prefix</span> <span class="o">=</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+
+<span class="p">[</span><span class="n">debug</span><span class="p">]</span>
+<span class="n">log_errors</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">show_warnings</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="p">[</span><span class="n">server</span><span class="p">]</span>
+<span class="n">port</span> <span class="o">=</span> <span class="mi">9000</span>
+<span class="n">nworkers</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">pid</span><span class="o">-</span><span class="n">file</span> <span class="o">=</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">spam</span><span class="o">.</span><span class="n">pid</span>
+<span class="n">root</span> <span class="o">=</span> <span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">root</span>
+<span class="n">signature</span> <span class="o">=</span>
+          <span class="o">=================================</span>
+          <span class="n">Brought</span> <span class="n">to</span> <span class="n">you</span> <span class="n">by</span> <span class="n">the</span> <span class="n">Python</span> <span class="n">Cookbook</span>
+          <span class="o">=================================</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>配置文件作为一种可读性很好的格式，非常适用于存储程序中的配置数据。
+在每个配置文件中，配置数据会被分组（比如例子中的“installation”、 “debug” 和 “server”）。
+每个分组在其中指定对应的各个变量值。</p>
+<p>对于可实现同样功能的配置文件和Python源文件是有很大的不同的。
+首先，配置文件的语法要更自由些，下面的赋值语句是等效的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+<span class="n">prefix</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+</pre></div>
+</div>
+<p>配置文件中的名字是不区分大小写的。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'PREFIX'</span><span class="p">)</span>
+<span class="go">'/usr/local'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'prefix'</span><span class="p">)</span>
+<span class="go">'/usr/local'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>在解析值的时候，<code class="docutils literal notranslate"><span class="pre">getboolean()</span></code> 方法查找任何可行的值。例如下面都是等价的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">log_errors</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">log_errors</span> <span class="o">=</span> <span class="n">TRUE</span>
+<span class="n">log_errors</span> <span class="o">=</span> <span class="n">Yes</span>
+<span class="n">log_errors</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>或许配置文件和Python代码最大的不同在于，它并不是从上而下的顺序执行。
+文件是安装一个整体被读取的。如果碰到了变量替换，它实际上已经被替换完成了。
+例如，在下面这个配置中，<code class="docutils literal notranslate"><span class="pre">prefix</span></code> 变量在使用它的变量之前或之后定义都是可以的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">installation</span><span class="p">]</span>
+<span class="n">library</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">lib</span>
+<span class="n">include</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="n">include</span>
+<span class="nb">bin</span><span class="o">=%</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="n">s</span><span class="o">/</span><span class="nb">bin</span>
+<span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ConfigParser</span></code> 有个容易被忽视的特性是它能一次读取多个配置文件然后合并成一个配置。
+例如，假设一个用户像下面这样构造了他们的配置文件：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">;</span> <span class="o">~/.</span><span class="n">config</span><span class="o">.</span><span class="n">ini</span>
+<span class="p">[</span><span class="n">installation</span><span class="p">]</span>
+<span class="n">prefix</span><span class="o">=/</span><span class="n">Users</span><span class="o">/</span><span class="n">beazley</span><span class="o">/</span><span class="n">test</span>
+
+<span class="p">[</span><span class="n">debug</span><span class="p">]</span>
+<span class="n">log_errors</span><span class="o">=</span><span class="kc">False</span>
+</pre></div>
+</div>
+<p>读取这个文件，它就能跟之前的配置合并起来。如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Previously read configuration</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span> <span class="s1">'prefix'</span><span class="p">)</span>
+<span class="go">'/usr/local'</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Merge in user-specific configuration</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.config.ini'</span><span class="p">))</span>
+<span class="go">['/Users/beazley/.config.ini']</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span> <span class="s1">'prefix'</span><span class="p">)</span>
+<span class="go">'/Users/beazley/test'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span> <span class="s1">'library'</span><span class="p">)</span>
+<span class="go">'/Users/beazley/test/lib'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s1">'debug'</span><span class="p">,</span> <span class="s1">'log_errors'</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>仔细观察下 <code class="docutils literal notranslate"><span class="pre">prefix</span></code> 变量是怎样覆盖其他相关变量的，比如 <code class="docutils literal notranslate"><span class="pre">library</span></code> 的设定值。
+产生这种结果的原因是变量的改写采取的是后发制人策略，以最后一个为准。
+你可以像下面这样做试验：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'library'</span><span class="p">)</span>
+<span class="go">'/Users/beazley/test/lib'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'prefix'</span><span class="p">,</span><span class="s1">'/tmp/dir'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'installation'</span><span class="p">,</span><span class="s1">'library'</span><span class="p">)</span>
+<span class="go">'/tmp/dir/lib'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后还有很重要一点要注意的是Python并不能支持.ini文件在其他程序（比如windows应用程序）中的所有特性。
+确保你已经参阅了configparser文档中的语法详情以及支持特性。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

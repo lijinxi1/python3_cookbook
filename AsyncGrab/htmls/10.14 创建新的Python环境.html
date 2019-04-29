@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>10.14 创建新的Python环境 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="python">
+<h1>10.14 创建新的Python环境<a class="headerlink" href="#python" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想创建一个新的Python环境，用来安装模块和包。
+不过，你不想安装一个新的Python克隆，也不想对系统Python环境产生影响。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你可以使用 <code class="docutils literal notranslate"><span class="pre">pyvenv</span></code> 命令创建一个新的“虚拟”环境。
+这个命令被安装在Python解释器同一目录，或Windows上面的Scripts目录中。下面是一个例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">pyvenv</span> <span class="n">Spam</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+<p>传给 <code class="docutils literal notranslate"><span class="pre">pyvenv</span></code> 命令的名字是将要被创建的目录名。当被创建后，Span目录像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">cd</span> <span class="n">Spam</span>
+<span class="n">bash</span> <span class="o">%</span> <span class="n">ls</span>
+<span class="nb">bin</span> <span class="n">include</span> <span class="n">lib</span> <span class="n">pyvenv</span><span class="o">.</span><span class="n">cfg</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+<p>在bin目录中，你会找到一个可以使用的Python解释器：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">Spam</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python3</span>
+<span class="n">Python</span> <span class="mf">3.3</span><span class="o">.</span><span class="mi">0</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Oct</span> <span class="mi">6</span> <span class="mi">2012</span><span class="p">,</span> <span class="mi">15</span><span class="p">:</span><span class="mi">45</span><span class="p">:</span><span class="mi">22</span><span class="p">)</span>
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">4.2</span><span class="o">.</span><span class="mi">1</span> <span class="p">(</span><span class="n">Apple</span> <span class="n">Inc</span><span class="o">.</span> <span class="n">build</span> <span class="mi">5666</span><span class="p">)</span> <span class="p">(</span><span class="n">dot</span> <span class="mi">3</span><span class="p">)]</span> <span class="n">on</span> <span class="n">darwin</span>
+<span class="n">Type</span> <span class="s2">"help"</span><span class="p">,</span> <span class="s2">"copyright"</span><span class="p">,</span> <span class="s2">"credits"</span> <span class="ow">or</span> <span class="s2">"license"</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pprint</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="p">[</span><span class="s1">''</span><span class="p">,</span>
+<span class="s1">'/usr/local/lib/python33.zip'</span><span class="p">,</span>
+<span class="s1">'/usr/local/lib/python3.3'</span><span class="p">,</span>
+<span class="s1">'/usr/local/lib/python3.3/plat-darwin'</span><span class="p">,</span>
+<span class="s1">'/usr/local/lib/python3.3/lib-dynload'</span><span class="p">,</span>
+<span class="s1">'/Users/beazley/Spam/lib/python3.3/site-packages'</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这个解释器的特点就是他的site-packages目录被设置为新创建的环境。
+如果你要安装第三方包，它们会被安装在那里，而不是通常系统的site-packages目录。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>创建虚拟环境通常是为了安装和管理第三方包。
+正如你在例子中看到的那样，<code class="docutils literal notranslate"><span class="pre">sys.path</span></code> 变量包含来自于系统Python的目录，
+而 site-packages目录已经被重定位到一个新的目录。</p>
+<p>有了一个新的虚拟环境，下一步就是安装一个包管理器，比如distribute或pip。
+但安装这样的工具和包的时候，你需要确保你使用的是虚拟环境的解释器。
+它会将包安装到新创建的site-packages目录中去。</p>
+<p>尽管一个虚拟环境看上去是Python安装的一个复制，
+不过它实际上只包含了少量几个文件和一些符号链接。
+所有标准库函文件和可执行解释器都来自原来的Python安装。
+因此，创建这样的环境是很容易的，并且几乎不会消耗机器资源。</p>
+<p>默认情况下，虚拟环境是空的，不包含任何额外的第三方库。如果你想将一个已经安装的包作为虚拟环境的一部分，
+可以使用“–system-site-packages”选项来创建虚拟环境，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">pyvenv</span> <span class="o">--</span><span class="n">system</span><span class="o">-</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span> <span class="n">Spam</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+<p>跟多关于 <code class="docutils literal notranslate"><span class="pre">pyvenv</span></code> 和虚拟环境的信息可以参考
+<a class="reference external" href="https://www.python.org/dev/peps/pep-0405/">PEP 405</a>.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

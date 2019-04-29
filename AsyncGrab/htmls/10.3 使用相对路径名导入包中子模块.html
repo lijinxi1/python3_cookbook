@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>10.3 使用相对路径名导入包中子模块 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>10.3 使用相对路径名导入包中子模块<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>将代码组织成包,想用import语句从另一个包名没有硬编码过的包中导入子模块。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>使用包的相对导入，使一个模块导入同一个包的另一个模块
+举个例子，假设在你的文件系统上有mypackage包，组织如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mypackage</span><span class="o">/</span>
+    <span class="fm">__init__</span><span class="o">.</span><span class="n">py</span>
+    <span class="n">A</span><span class="o">/</span>
+        <span class="fm">__init__</span><span class="o">.</span><span class="n">py</span>
+        <span class="n">spam</span><span class="o">.</span><span class="n">py</span>
+        <span class="n">grok</span><span class="o">.</span><span class="n">py</span>
+    <span class="n">B</span><span class="o">/</span>
+        <span class="fm">__init__</span><span class="o">.</span><span class="n">py</span>
+        <span class="n">bar</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>如果模块mypackage.A.spam要导入同目录下的模块grok，它应该包括的import语句如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># mypackage/A/spam.py</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">grok</span>
+</pre></div>
+</div>
+<p>如果模块mypackage.A.spam要导入不同目录下的模块B.bar，它应该使用的import语句如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># mypackage/A/spam.py</span>
+<span class="kn">from</span> <span class="nn">..B</span> <span class="kn">import</span> <span class="n">bar</span>
+</pre></div>
+</div>
+<p>两个import语句都没包含顶层包名，而是使用了spam.py的相对路径。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>在包内，既可以使用相对路径也可以使用绝对路径来导入。
+举个例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># mypackage/A/spam.py</span>
+<span class="kn">from</span> <span class="nn">mypackage.A</span> <span class="kn">import</span> <span class="n">grok</span> <span class="c1"># OK</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">grok</span> <span class="c1"># OK</span>
+<span class="kn">import</span> <span class="nn">grok</span> <span class="c1"># Error (not found)</span>
+</pre></div>
+</div>
+<p>像mypackage.A这样使用绝对路径名的不利之处是这将顶层包名硬编码到你的源码中。如果你想重新组织它，你的代码将更脆，很难工作。 举个例子，如果你改变了包名，你就必须检查所有文件来修正源码。 同样，硬编码的名称会使移动代码变得困难。举个例子，也许有人想安装两个不同版本的软件包，只通过名称区分它们。 如果使用相对导入，那一切都ok，然而使用绝对路径名很可能会出问题。</p>
+<p>import语句的 <code class="docutils literal notranslate"><span class="pre">.</span></code> 和 <code class="docutils literal notranslate"><span class="pre">..</span></code> 看起来很滑稽, 但它指定目录名.为当前目录，..B为目录../B。这种语法只适用于import。
+举个例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">grok</span> <span class="c1"># OK</span>
+<span class="kn">import</span> <span class="o">.</span><span class="n">grok</span> <span class="c1"># ERROR</span>
+</pre></div>
+</div>
+<p>尽管使用相对导入看起来像是浏览文件系统，但是不能到定义包的目录之外。也就是说，使用点的这种模式从不是包的目录中导入将会引发错误。</p>
+<p>最后，相对导入只适用于在合适的包中的模块。尤其是在顶层的脚本的简单模块中，它们将不起作用。如果包的部分被作为脚本直接执行，那它们将不起作用
+例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span> <span class="n">python3</span> <span class="n">mypackage</span><span class="o">/</span><span class="n">A</span><span class="o">/</span><span class="n">spam</span><span class="o">.</span><span class="n">py</span> <span class="c1"># Relative imports fail</span>
+</pre></div>
+</div>
+<p>另一方面，如果你使用Python的-m选项来执行先前的脚本，相对导入将会正确运行。
+例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span> <span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">mypackage</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">spam</span> <span class="c1"># Relative imports work</span>
+</pre></div>
+</div>
+<p>更多的包的相对导入的背景知识,请看 <a class="reference external" href="http://www.python.org/dev/peps/pep-0328">PEP 328</a> .</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

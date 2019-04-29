@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.20 处理C语言中的可迭代对象 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="c">
+<h1>15.20 处理C语言中的可迭代对象<a class="headerlink" href="#c" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想写C扩展代码处理来自任何可迭代对象如列表、元组、文件或生成器中的元素。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>下面是一个C扩展函数例子，演示了怎样处理可迭代对象中的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>static PyObject *py_consume_iterable(PyObject *self, PyObject *args) {
+  PyObject *obj;
+  PyObject *iter;
+  PyObject *item;
+
+  if (!PyArg_ParseTuple(args, "O", &amp;obj)) {
+    return NULL;
+  }
+  if ((iter = PyObject_GetIter(obj)) == NULL) {
+    return NULL;
+  }
+  while ((item = PyIter_Next(iter)) != NULL) {
+    /* Use item */
+    ...
+    Py_DECREF(item);
+  }
+
+  Py_DECREF(iter);
+  return Py_BuildValue("");
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>本节中的代码和Python中对应代码类似。
+<code class="docutils literal notranslate"><span class="pre">PyObject_GetIter()</span></code> 的调用和调用 <code class="docutils literal notranslate"><span class="pre">iter()</span></code> 一样可获得一个迭代器。
+<code class="docutils literal notranslate"><span class="pre">PyIter_Next()</span></code> 函数调用 <code class="docutils literal notranslate"><span class="pre">next</span></code> 方法返回下一个元素或NULL(如果没有元素了)。
+要注意正确的内存管理—— <code class="docutils literal notranslate"><span class="pre">Py_DECREF()</span></code> 需要同时在产生的元素和迭代器对象本身上同时被调用，
+以避免出现内存泄露。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

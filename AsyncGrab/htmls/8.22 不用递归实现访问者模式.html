@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.22 不用递归实现访问者模式 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.22 不用递归实现访问者模式<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你使用访问者模式遍历一个很深的嵌套树形数据结构，并且因为超过嵌套层级限制而失败。
+你想消除递归，并同时保持访问者编程模式。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>通过巧妙的使用生成器可以在树遍历或搜索算法中消除递归。
+在8.21小节中，我们给出了一个访问者类。
+下面我们利用一个栈和生成器重新实现这个类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">types</span>
+
+<span class="k">class</span> <span class="nc">Node</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">NodeVisitor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="n">last_result</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">last</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">GeneratorType</span><span class="p">):</span>
+                    <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">last</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">last_result</span><span class="p">))</span>
+                    <span class="n">last_result</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+                    <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_visit</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">last_result</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">last_result</span>
+
+    <span class="k">def</span> <span class="nf">_visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">methname</span> <span class="o">=</span> <span class="s1">'visit_'</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">meth</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">meth</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">meth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span>
+        <span class="k">return</span> <span class="n">meth</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">generic_visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'No {} method'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">'visit_'</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>如果你使用这个类，也能达到相同的效果。事实上你完全可以将它作为上一节中的访问者模式的替代实现。
+考虑如下代码，遍历一个表达式的树：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">UnaryOperator</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operand</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operand</span> <span class="o">=</span> <span class="n">operand</span>
+
+<span class="k">class</span> <span class="nc">BinaryOperator</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+
+<span class="k">class</span> <span class="nc">Add</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Sub</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Mul</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Div</span><span class="p">(</span><span class="n">BinaryOperator</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Negate</span><span class="p">(</span><span class="n">UnaryOperator</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Number</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+<span class="c1"># A sample visitor class that evaluates expressions</span>
+<span class="k">class</span> <span class="nc">Evaluator</span><span class="p">(</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visit_Number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">visit_Add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Negate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">operand</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="c1"># 1 + 2*(3-4) / 5</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">Sub</span><span class="p">(</span><span class="n">Number</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">Number</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">Mul</span><span class="p">(</span><span class="n">Number</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">t1</span><span class="p">)</span>
+    <span class="n">t3</span> <span class="o">=</span> <span class="n">Div</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">Number</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+    <span class="n">t4</span> <span class="o">=</span> <span class="n">Add</span><span class="p">(</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">t3</span><span class="p">)</span>
+    <span class="c1"># Evaluate it</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">t4</span><span class="p">))</span>  <span class="c1"># Outputs 0.6</span>
+</pre></div>
+</div>
+<p>如果嵌套层次太深那么上述的Evaluator就会失效：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; a = Number(0)
+&gt;&gt;&gt; for n in range(1, 100000):
+... a = Add(a, Number(n))
+...
+&gt;&gt;&gt; e = Evaluator()
+&gt;&gt;&gt; e.visit(a)
+Traceback (most recent call last):
+...
+    File "visitor.py", line 29, in _visit
+return meth(node)
+    File "visitor.py", line 67, in visit_Add
+return self.visit(node.left) + self.visit(node.right)
+RuntimeError: maximum recursion depth exceeded
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>现在我们稍微修改下上面的Evaluator：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Evaluator</span><span class="p">(</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visit_Number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">visit_Add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Negate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="o">-</span> <span class="p">(</span><span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">operand</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>再次运行，就不会报错了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Number</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100000</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Number</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">4999950000</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你还想添加其他自定义逻辑也没问题：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Evaluator</span><span class="p">(</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">visit_Add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Add:'</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'left='</span><span class="p">,</span> <span class="n">lhs</span><span class="p">)</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">right</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'right='</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">lhs</span> <span class="o">+</span> <span class="n">rhs</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>下面是简单的测试：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">t4</span><span class="p">)</span>
+<span class="go">Add: &lt;__main__.Add object at 0x1006a8d90&gt;</span>
+<span class="go">left= 1</span>
+<span class="go">right= -0.4</span>
+<span class="go">0.6</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>这一小节我们演示了生成器和协程在程序控制流方面的强大功能。
+避免递归的一个通常方法是使用一个栈或队列的数据结构。
+例如，深度优先的遍历算法，第一次碰到一个节点时将其压入栈中，处理完后弹出栈。<code class="docutils literal notranslate"><span class="pre">visit()</span></code> 方法的核心思路就是这样。</p>
+<p>另外一个需要理解的就是生成器中yield语句。当碰到yield语句时，生成器会返回一个数据并暂时挂起。
+上面的例子使用这个技术来代替了递归。例如，之前我们是这样写递归：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>现在换成yield语句：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">node</span><span class="o">.</span><span class="n">left</span>
+</pre></div>
+</div>
+<p>它会将 <code class="docutils literal notranslate"><span class="pre">node.left</span></code> 返回给 <code class="docutils literal notranslate"><span class="pre">visit()</span></code> 方法，然后 <code class="docutils literal notranslate"><span class="pre">visit()</span></code> 方法调用那个节点相应的 <code class="docutils literal notranslate"><span class="pre">visit_Name()</span></code> 方法。
+yield暂时将程序控制器让出给调用者，当执行完后，结果会赋值给value，</p>
+<p>看完这一小节，你也许想去寻找其它没有yield语句的方案。但是这么做没有必要，你必须处理很多棘手的问题。
+例如，为了消除递归，你必须要维护一个栈结构，如果不使用生成器，代码会变得很臃肿，到处都是栈操作语句、回调函数等。
+实际上，使用yield语句可以让你写出非常漂亮的代码，它消除了递归但是看上去又很像递归实现，代码很简洁。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>11.8 实现远程方法调用 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>11.8 实现远程方法调用<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想在一个消息传输层如 <code class="docutils literal notranslate"><span class="pre">sockets</span></code> 、<code class="docutils literal notranslate"><span class="pre">multiprocessing</span> <span class="pre">connections</span></code> 或 <code class="docutils literal notranslate"><span class="pre">ZeroMQ</span></code>
+的基础之上实现一个简单的远程过程调用（RPC）。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>将函数请求、参数和返回值使用pickle编码后，在不同的解释器直接传送pickle字节字符串，可以很容易的实现RPC。
+下面是一个简单的PRC处理器，可以被整合到一个服务器中去：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># rpcserver.py</span>
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">class</span> <span class="nc">RPCHandler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">register_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+
+    <span class="k">def</span> <span class="nf">handle_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c1"># Receive a message</span>
+                <span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">connection</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+                <span class="c1"># Run the RPC and send a response</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+             <span class="k">pass</span>
+</pre></div>
+</div>
+<p>要使用这个处理器，你需要将它加入到一个消息服务器中。你有很多种选择，
+但是使用 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 库是最简单的。下面是一个RPC服务器例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">multiprocessing.connection</span> <span class="kn">import</span> <span class="n">Listener</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+
+<span class="k">def</span> <span class="nf">rpc_server</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">authkey</span><span class="p">):</span>
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">Listener</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">authkey</span><span class="o">=</span><span class="n">authkey</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">handler</span><span class="o">.</span><span class="n">handle_connection</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">client</span><span class="p">,))</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Some remote functions</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+
+<span class="k">def</span> <span class="nf">sub</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">-</span> <span class="n">y</span>
+
+<span class="c1"># Register with a handler</span>
+<span class="n">handler</span> <span class="o">=</span> <span class="n">RPCHandler</span><span class="p">()</span>
+<span class="n">handler</span><span class="o">.</span><span class="n">register_function</span><span class="p">(</span><span class="n">add</span><span class="p">)</span>
+<span class="n">handler</span><span class="o">.</span><span class="n">register_function</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+
+<span class="c1"># Run the server</span>
+<span class="n">rpc_server</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="p">(</span><span class="s1">'localhost'</span><span class="p">,</span> <span class="mi">17000</span><span class="p">),</span> <span class="n">authkey</span><span class="o">=</span><span class="sa">b</span><span class="s1">'peekaboo'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>为了从一个远程客户端访问服务器，你需要创建一个对应的用来传送请求的RPC代理类。例如</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="k">class</span> <span class="nc">RPCProxy</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="n">connection</span>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">do_rpc</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">result</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">do_rpc</span>
+</pre></div>
+</div>
+<p>要使用这个代理类，你需要将其包装到一个服务器的连接上面，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">multiprocessing.connection</span> <span class="kn">import</span> <span class="n">Client</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">Client</span><span class="p">((</span><span class="s1">'localhost'</span><span class="p">,</span> <span class="mi">17000</span><span class="p">),</span> <span class="n">authkey</span><span class="o">=</span><span class="sa">b</span><span class="s1">'peekaboo'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proxy</span> <span class="o">=</span> <span class="n">RPCProxy</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proxy</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proxy</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">-1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proxy</span><span class="o">.</span><span class="n">sub</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">"rpcserver.py"</span>, line <span class="m">37</span>, in <span class="n">do_rpc</span>
+    <span class="k">raise</span> <span class="n">result</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for -: 'list' and 'int'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>要注意的是很多消息层（比如 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> ）已经使用pickle序列化了数据。
+如果是这样的话，对 <code class="docutils literal notranslate"><span class="pre">pickle.dumps()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">pickle.loads()</span></code> 的调用要去掉。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">RPCHandler</span></code> 和 <code class="docutils literal notranslate"><span class="pre">RPCProxy</span></code> 的基本思路是很比较简单的。
+如果一个客户端想要调用一个远程函数，比如 <code class="docutils literal notranslate"><span class="pre">foo(1,</span> <span class="pre">2,</span> <span class="pre">z=3)</span></code>
+,代理类创建一个包含了函数名和参数的元组 <code class="docutils literal notranslate"><span class="pre">('foo',</span> <span class="pre">(1,</span> <span class="pre">2),</span> <span class="pre">{'z':</span> <span class="pre">3})</span></code> 。
+这个元组被pickle序列化后通过网络连接发生出去。
+这一步在 <code class="docutils literal notranslate"><span class="pre">RPCProxy</span></code> 的 <code class="docutils literal notranslate"><span class="pre">__getattr__()</span></code> 方法返回的 <code class="docutils literal notranslate"><span class="pre">do_rpc()</span></code> 闭包中完成。
+服务器接收后通过pickle反序列化消息，查找函数名看看是否已经注册过，然后执行相应的函数。
+执行结果(或异常)被pickle序列化后返回发送给客户端。我们的实例需要依赖 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 进行通信。
+不过，这种方式可以适用于其他任何消息系统。例如，如果你想在ZeroMQ之上实习RPC，
+仅仅只需要将连接对象换成合适的ZeroMQ的socket对象即可。</p>
+<p>由于底层需要依赖pickle，那么安全问题就需要考虑了
+（因为一个聪明的黑客可以创建特定的消息，能够让任意函数通过pickle反序列化后被执行）。
+因此你永远不要允许来自不信任或未认证的客户端的RPC。特别是你绝对不要允许来自Internet的任意机器的访问，
+这种只能在内部被使用，位于防火墙后面并且不要对外暴露。</p>
+<p>作为pickle的替代，你也许可以考虑使用JSON、XML或一些其他的编码格式来序列化消息。
+例如，本机实例可以很容易的改写成JSON编码方案。还需要将 <code class="docutils literal notranslate"><span class="pre">pickle.loads()</span></code> 和  <code class="docutils literal notranslate"><span class="pre">pickle.dumps()</span></code>
+替换成 <code class="docutils literal notranslate"><span class="pre">json.loads()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">json.dumps()</span></code> 即可：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># jsonrpcserver.py</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">class</span> <span class="nc">RPCHandler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">register_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+
+    <span class="k">def</span> <span class="nf">handle_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c1"># Receive a message</span>
+                <span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">connection</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+                <span class="c1"># Run the RPC and send a response</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+        <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+             <span class="k">pass</span>
+
+<span class="c1"># jsonrpcclient.py</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">class</span> <span class="nc">RPCProxy</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="n">connection</span>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">do_rpc</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">do_rpc</span>
+</pre></div>
+</div>
+<p>实现RPC的一个比较复杂的问题是如何去处理异常。至少，当方法产生异常时服务器不应该奔溃。
+因此，返回给客户端的异常所代表的含义就要好好设计了。
+如果你使用pickle，异常对象实例在客户端能被反序列化并抛出。如果你使用其他的协议，那得想想另外的方法了。
+不过至少，你应该在响应中返回异常字符串。我们在JSON的例子中就是使用的这种方式。</p>
+<p>对于其他的RPC实现例子，我推荐你看看在XML-RPC中使用的 <code class="docutils literal notranslate"><span class="pre">SimpleXMLRPCServer</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ServerProxy</span></code> 的实现，
+也就是11.6小节中的内容。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

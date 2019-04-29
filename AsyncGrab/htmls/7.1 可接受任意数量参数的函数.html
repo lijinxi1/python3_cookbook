@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>7.1 可接受任意数量参数的函数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p07_functions.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p07_functions.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>7.1 可接受任意数量参数的函数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想构造一个可接受任意数量参数的函数。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>为了能让一个函数接受任意数量的位置参数，可以使用一个*参数。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">avg</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="o">*</span><span class="n">rest</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">first</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">rest</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">rest</span><span class="p">))</span>
+
+<span class="c1"># Sample use</span>
+<span class="n">avg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># 1.5</span>
+<span class="n">avg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="c1"># 2.5</span>
+</pre></div>
+</div>
+<p>在这个例子中，rest是由所有其他位置参数组成的元组。然后我们在代码中把它当成了一个序列来进行后续的计算。</p>
+<p>为了接受任意数量的关键字参数，使用一个以**开头的参数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">html</span>
+
+<span class="k">def</span> <span class="nf">make_element</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">attrs</span><span class="p">):</span>
+    <span class="n">keyvals</span> <span class="o">=</span> <span class="p">[</span><span class="s1">' </span><span class="si">%s</span><span class="s1">="</span><span class="si">%s</span><span class="s1">"'</span> <span class="o">%</span> <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">attr_str</span> <span class="o">=</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">keyvals</span><span class="p">)</span>
+    <span class="n">element</span> <span class="o">=</span> <span class="s1">'&lt;{name}{attrs}&gt;{value}&lt;/{name}&gt;'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">attrs</span><span class="o">=</span><span class="n">attr_str</span><span class="p">,</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">element</span>
+
+<span class="c1"># Example</span>
+<span class="c1"># Creates '&lt;item size="large" quantity="6"&gt;Albatross&lt;/item&gt;'</span>
+<span class="n">make_element</span><span class="p">(</span><span class="s1">'item'</span><span class="p">,</span> <span class="s1">'Albatross'</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s1">'large'</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+
+<span class="c1"># Creates '&lt;p&gt;&amp;lt;spam&amp;gt;&lt;/p&gt;'</span>
+<span class="n">make_element</span><span class="p">(</span><span class="s1">'p'</span><span class="p">,</span> <span class="s1">'&lt;spam&gt;'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>在这里，attrs是一个包含所有被传入进来的关键字参数的字典。</p>
+<p>如果你还希望某个函数能同时接受任意数量的位置参数和关键字参数，可以同时使用*和**。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">anyargs</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="c1"># A tuple</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="c1"># A dict</span>
+</pre></div>
+</div>
+<p>使用这个函数时，所有位置参数会被放到args元组中，所有关键字参数会被放到字典kwargs中。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>一个*参数只能出现在函数定义中最后一个位置参数后面，而 <a href="#id5"><span class="problematic" id="id6">**</span></a>参数只能出现在最后一个参数。
+有一点要注意的是，在*参数后面仍然可以定义其他参数。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">a</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">b</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>这种参数就是我们所说的强制关键字参数，在后面7.2小节还会详细讲解到。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

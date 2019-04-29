@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>1.14 排序不支持原生比较的对象 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>1.14 排序不支持原生比较的对象<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想排序类型相同的对象，但是他们不支持原生的比较操作。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>内置的 <code class="docutils literal notranslate"><span class="pre">sorted()</span></code> 函数有一个关键字参数 <code class="docutils literal notranslate"><span class="pre">key</span></code> ，可以传入一个 <code class="docutils literal notranslate"><span class="pre">callable</span></code> 对象给它，
+这个 <code class="docutils literal notranslate"><span class="pre">callable</span></code> 对象对每个传入的对象返回一个值，这个值会被 <code class="docutils literal notranslate"><span class="pre">sorted</span></code> 用来排序这些对象。
+比如，如果你在应用程序里面有一个 <code class="docutils literal notranslate"><span class="pre">User</span></code> 实例序列，并且你希望通过他们的 <code class="docutils literal notranslate"><span class="pre">user_id</span></code> 属性进行排序，
+你可以提供一个以 <code class="docutils literal notranslate"><span class="pre">User</span></code> 实例作为输入并输出对应 <code class="docutils literal notranslate"><span class="pre">user_id</span></code> 值的 <code class="docutils literal notranslate"><span class="pre">callable</span></code> 对象。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">user_id</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">'User({})'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">sort_notcompare</span><span class="p">():</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="n">User</span><span class="p">(</span><span class="mi">23</span><span class="p">),</span> <span class="n">User</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">User</span><span class="p">(</span><span class="mi">99</span><span class="p">)]</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="n">u</span><span class="o">.</span><span class="n">user_id</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>另外一种方式是使用 <code class="docutils literal notranslate"><span class="pre">operator.attrgetter()</span></code> 来代替 lambda 函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">attrgetter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">'user_id'</span><span class="p">))</span>
+<span class="go">[User(3), User(23), User(99)]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>选择使用 lambda 函数或者是 <code class="docutils literal notranslate"><span class="pre">attrgetter()</span></code> 可能取决于个人喜好。
+但是， <code class="docutils literal notranslate"><span class="pre">attrgetter()</span></code> 函数通常会运行的快点，并且还能同时允许多个字段进行比较。
+这个跟 <code class="docutils literal notranslate"><span class="pre">operator.itemgetter()</span></code> 函数作用于字典类型很类似（参考1.13小节）。
+例如，如果 <code class="docutils literal notranslate"><span class="pre">User</span></code> 实例还有一个 <code class="docutils literal notranslate"><span class="pre">first_name</span></code> 和 <code class="docutils literal notranslate"><span class="pre">last_name</span></code> 属性，那么可以向下面这样排序：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">by_name</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">'last_name'</span><span class="p">,</span> <span class="s1">'first_name'</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>同样需要注意的是，这一小节用到的技术同样适用于像 <code class="docutils literal notranslate"><span class="pre">min()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">max()</span></code> 之类的函数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">min</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">'user_id'</span><span class="p">))</span>
+<span class="go">User(3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">max</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">'user_id'</span><span class="p">))</span>
+<span class="go">User(99)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

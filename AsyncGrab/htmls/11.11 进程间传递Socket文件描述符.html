@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>11.11 进程间传递Socket文件描述符 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="socket">
+<h1>11.11 进程间传递Socket文件描述符<a class="headerlink" href="#socket" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你有多个Python解释器进程在同时运行，你想将某个打开的文件描述符从一个解释器传递给另外一个。
+比如，假设有个服务器进程相应连接请求，但是实际的相应逻辑是在另一个解释器中执行的。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>为了在多个进程中传递文件描述符，你首先需要将它们连接到一起。在Unix机器上，你可能需要使用Unix域套接字，
+而在windows上面你需要使用命名管道。不过你无需真的需要去操作这些底层，
+通常使用 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 模块来创建这样的连接会更容易一些。</p>
+<p>一旦一个连接被创建，你可以使用 <code class="docutils literal notranslate"><span class="pre">multiprocessing.reduction</span></code> 中的
+<code class="docutils literal notranslate"><span class="pre">send_handle()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">recv_handle()</span></code> 函数在不同的处理器直接传递文件描述符。
+下面的例子演示了最基本的用法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.reduction</span> <span class="kn">import</span> <span class="n">recv_handle</span><span class="p">,</span> <span class="n">send_handle</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="n">in_p</span><span class="p">,</span> <span class="n">out_p</span><span class="p">):</span>
+    <span class="n">out_p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">recv_handle</span><span class="p">(</span><span class="n">in_p</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'CHILD: GOT FD'</span><span class="p">,</span> <span class="n">fd</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">fileno</span><span class="o">=</span><span class="n">fd</span><span class="p">)</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">print</span><span class="p">(</span><span class="s1">'CHILD: RECV {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">in_p</span><span class="p">,</span> <span class="n">out_p</span><span class="p">,</span> <span class="n">worker_pid</span><span class="p">):</span>
+    <span class="n">in_p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'SERVER: Got connection from'</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+        <span class="n">send_handle</span><span class="p">(</span><span class="n">out_p</span><span class="p">,</span> <span class="n">client</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">worker_pid</span><span class="p">)</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pipe</span><span class="p">()</span>
+    <span class="n">worker_p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span><span class="n">c2</span><span class="p">))</span>
+    <span class="n">worker_p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="n">server_p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">=</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span> <span class="mi">15000</span><span class="p">),</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">worker_p</span><span class="o">.</span><span class="n">pid</span><span class="p">))</span>
+    <span class="n">server_p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="n">c1</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">c2</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>在这个例子中，两个进程被创建并通过一个 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 管道连接起来。
+服务器进程打开一个socket并等待客户端连接请求。
+工作进程仅仅使用 <code class="docutils literal notranslate"><span class="pre">recv_handle()</span></code> 在管道上面等待接收一个文件描述符。
+当服务器接收到一个连接，它将产生的socket文件描述符通过 <code class="docutils literal notranslate"><span class="pre">send_handle()</span></code> 传递给工作进程。
+工作进程接收到socket后向客户端回应数据，然后此次连接关闭。</p>
+<p>如果你使用Telnet或类似工具连接到服务器，下面是一个演示例子：</p>
+<blockquote>
+<div>bash % python3 passfd.py
+SERVER: Got connection from (‘127.0.0.1’, 55543)
+CHILD: GOT FD 7
+CHILD: RECV b’Hellorn’
+CHILD: RECV b’Worldrn’</div></blockquote>
+<p>此例最重要的部分是服务器接收到的客户端socket实际上被另外一个不同的进程处理。
+服务器仅仅只是将其转手并关闭此连接，然后等待下一个连接。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>对于大部分程序员来讲在不同进程之间传递文件描述符好像没什么必要。
+但是，有时候它是构建一个可扩展系统的很有用的工具。例如，在一个多核机器上面，
+你可以有多个Python解释器实例，将文件描述符传递给其它解释器来实现负载均衡。</p>
+<p><code class="docutils literal notranslate"><span class="pre">send_handle()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">recv_handle()</span></code> 函数只能够用于 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 连接。
+使用它们来代替管道的使用（参考11.7节），只要你使用的是Unix域套接字或Windows管道。
+例如，你可以让服务器和工作者各自以单独的程序来启动。下面是服务器的实现例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># servermp.py</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.connection</span> <span class="kn">import</span> <span class="n">Listener</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.reduction</span> <span class="kn">import</span> <span class="n">send_handle</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">work_address</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="c1"># Wait for the worker to connect</span>
+    <span class="n">work_serv</span> <span class="o">=</span> <span class="n">Listener</span><span class="p">(</span><span class="n">work_address</span><span class="p">,</span> <span class="n">authkey</span><span class="o">=</span><span class="sa">b</span><span class="s1">'peekaboo'</span><span class="p">)</span>
+    <span class="n">worker</span> <span class="o">=</span> <span class="n">work_serv</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+    <span class="n">worker_pid</span> <span class="o">=</span> <span class="n">worker</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+    <span class="c1"># Now run a TCP/IP server and send clients to worker</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'SERVER: Got connection from'</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+
+        <span class="n">send_handle</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">client</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">worker_pid</span><span class="p">)</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Usage: server.py server_address port'</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">server</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>运行这个服务器，只需要执行 <cite>python3 servermp.py /tmp/servconn 15000</cite> ，下面是相应的工作者代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># workermp.py</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing.connection</span> <span class="kn">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.reduction</span> <span class="kn">import</span> <span class="n">recv_handle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">socket</span> <span class="kn">import</span> <span class="n">socket</span><span class="p">,</span> <span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span>
+
+<span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="n">server_address</span><span class="p">):</span>
+    <span class="n">serv</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">server_address</span><span class="p">,</span> <span class="n">authkey</span><span class="o">=</span><span class="sa">b</span><span class="s1">'peekaboo'</span><span class="p">)</span>
+    <span class="n">serv</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">recv_handle</span><span class="p">(</span><span class="n">serv</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'WORKER: GOT FD'</span><span class="p">,</span> <span class="n">fd</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">fileno</span><span class="o">=</span><span class="n">fd</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">print</span><span class="p">(</span><span class="s1">'WORKER: RECV {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+                <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Usage: worker.py server_address'</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">worker</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>要运行工作者，执行执行命令 <cite>python3 workermp.py /tmp/servconn</cite> .
+效果跟使用Pipe()例子是完全一样的。
+文件描述符的传递会涉及到UNIX域套接字的创建和套接字的 <code class="docutils literal notranslate"><span class="pre">sendmsg()</span></code> 方法。
+不过这种技术并不常见，下面是使用套接字来传递描述符的另外一种实现：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># server.py</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="k">def</span> <span class="nf">send_fd</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">fd</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Send a single file descriptor.</span>
+<span class="sd">    '''</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendmsg</span><span class="p">([</span><span class="sa">b</span><span class="s1">'x'</span><span class="p">],</span>
+                 <span class="p">[(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SCM_RIGHTS</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="n">fd</span><span class="p">))])</span>
+    <span class="n">ack</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">ack</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">'OK'</span>
+
+<span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">work_address</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="c1"># Wait for the worker to connect</span>
+    <span class="n">work_serv</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNIX</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">work_serv</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">work_address</span><span class="p">)</span>
+    <span class="n">work_serv</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">worker</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">work_serv</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+
+    <span class="c1"># Now run a TCP/IP server and send clients to worker</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span><span class="n">port</span><span class="p">))</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'SERVER: Got connection from'</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+        <span class="n">send_fd</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">client</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Usage: server.py server_address port'</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">server</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>下面是使用套接字的工作者实现：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># worker.py</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="k">def</span> <span class="nf">recv_fd</span><span class="p">(</span><span class="n">sock</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Receive a single file descriptor</span>
+<span class="sd">    '''</span>
+    <span class="n">msg</span><span class="p">,</span> <span class="n">ancdata</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recvmsg</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                                     <span class="n">socket</span><span class="o">.</span><span class="n">CMSG_LEN</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="s1">'i'</span><span class="p">)))</span>
+
+    <span class="n">cmsg_level</span><span class="p">,</span> <span class="n">cmsg_type</span><span class="p">,</span> <span class="n">cmsg_data</span> <span class="o">=</span> <span class="n">ancdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">cmsg_level</span> <span class="o">==</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span> <span class="ow">and</span> <span class="n">cmsg_type</span> <span class="o">==</span> <span class="n">socket</span><span class="o">.</span><span class="n">SCM_RIGHTS</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="sa">b</span><span class="s1">'OK'</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="n">cmsg_data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="n">server_address</span><span class="p">):</span>
+    <span class="n">serv</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNIX</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">serv</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">server_address</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">recv_fd</span><span class="p">(</span><span class="n">serv</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'WORKER: GOT FD'</span><span class="p">,</span> <span class="n">fd</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">fileno</span><span class="o">=</span><span class="n">fd</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">print</span><span class="p">(</span><span class="s1">'WORKER: RECV {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+                <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Usage: worker.py server_address'</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">worker</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>如果你想在你的程序中传递文件描述符，建议你参阅其他一些更加高级的文档，
+比如 <code class="docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Network</span> <span class="pre">Programming</span> <span class="pre">by</span> <span class="pre">W.</span> <span class="pre">Richard</span> <span class="pre">Stevens</span>  <span class="pre">(Prentice</span>  <span class="pre">Hall,</span>  <span class="pre">1990)</span></code> .
+在Windows上传递文件描述符跟Unix是不一样的，建议你研究下 <code class="docutils literal notranslate"><span class="pre">multiprocessing.reduction</span></code> 中的源代码看看其工作原理。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

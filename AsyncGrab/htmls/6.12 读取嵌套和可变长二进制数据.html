@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>6.12 读取嵌套和可变长二进制数据 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>6.12 读取嵌套和可变长二进制数据<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你需要读取包含嵌套或者可变长记录集合的复杂二进制格式的数据。这些数据可能包含图片、视频、电子地图文件等。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">struct</span></code> 模块可被用来编码/解码几乎所有类型的二进制的数据结构。为了解释清楚这种数据，假设你用下面的Python数据结构
+来表示一个组成一系列多边形的点的集合：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">polys</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span> <span class="p">],</span>
+    <span class="p">[</span> <span class="p">(</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">),</span> <span class="p">(</span><span class="mf">5.1</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">)</span> <span class="p">],</span>
+    <span class="p">[</span> <span class="p">(</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">6.3</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">4.6</span><span class="p">,</span> <span class="mf">9.2</span><span class="p">)</span> <span class="p">],</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>现在假设这个数据被编码到一个以下列头部开始的二进制文件中去了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>+------+--------+------------------------------------+
+|Byte  | Type   |  Description                       |
++======+========+====================================+
+|0     | int    |  文件代码（0x1234，小端）          |
++------+--------+------------------------------------+
+|4     | double |  x 的最小值（小端）                |
++------+--------+------------------------------------+
+|12    | double |  y 的最小值（小端）                |
++------+--------+------------------------------------+
+|20    | double |  x 的最大值（小端）                |
++------+--------+------------------------------------+
+|28    | double |  y 的最大值（小端）                |
++------+--------+------------------------------------+
+|36    | int    |  三角形数量（小端）                |
++------+--------+------------------------------------+
+</pre></div>
+</div>
+<p>紧跟着头部是一系列的多边形记录，编码格式如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>+------+--------+-------------------------------------------+
+|Byte  | Type   |  Description                              |
++======+========+===========================================+
+|0     | int    |  记录长度（N字节）                        |
++------+--------+-------------------------------------------+
+|4-N   | Points |  (X,Y) 坐标，以浮点数表示                 |
++------+--------+-------------------------------------------+
+</pre></div>
+</div>
+<p>为了写这样的文件，你可以使用如下的Python代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="k">def</span> <span class="nf">write_polys</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">polys</span><span class="p">):</span>
+    <span class="c1"># Determine bounding box</span>
+    <span class="n">flattened</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">polys</span><span class="p">))</span>
+    <span class="n">min_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">flattened</span><span class="p">)</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">flattened</span><span class="p">)</span>
+    <span class="n">min_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">flattened</span><span class="p">)</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">flattened</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">'&lt;iddddi'</span><span class="p">,</span> <span class="mh">0x1234</span><span class="p">,</span>
+                            <span class="n">min_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span>
+                            <span class="n">max_x</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span>
+                            <span class="nb">len</span><span class="p">(</span><span class="n">polys</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">polys</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span> <span class="o">*</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="s1">'&lt;dd'</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="n">size</span> <span class="o">+</span> <span class="mi">4</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">poly</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">'&lt;dd'</span><span class="p">,</span> <span class="o">*</span><span class="n">pt</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>将数据读取回来的时候，可以利用函数 <code class="docutils literal notranslate"><span class="pre">struct.unpack()</span></code> ，代码很相似，基本就是上面写操作的逆序。如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">read_polys</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="c1"># Read the header</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+        <span class="n">file_code</span><span class="p">,</span> <span class="n">min_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span> <span class="n">num_polys</span> <span class="o">=</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">'&lt;iddddi'</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+        <span class="n">polys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_polys</span><span class="p">):</span>
+            <span class="n">pbytes</span><span class="p">,</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pbytes</span> <span class="o">//</span> <span class="mi">16</span><span class="p">):</span>
+                <span class="n">pt</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">'&lt;dd'</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>
+                <span class="n">poly</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="n">polys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">polys</span>
+</pre></div>
+</div>
+<p>尽管这个代码可以工作，但是里面混杂了很多读取、解包数据结构和其他细节的代码。如果用这样的代码来处理真实的数据文件，
+那未免也太繁杂了点。因此很显然应该有另一种解决方法可以简化这些步骤，让程序员只关注自最重要的事情。</p>
+<p>在本小节接下来的部分，我会逐步演示一个更加优秀的解析字节数据的方案。
+目标是可以给程序员提供一个高级的文件格式化方法，并简化读取和解包数据的细节。但是我要先提醒你，
+本小节接下来的部分代码应该是整本书中最复杂最高级的例子，使用了大量的面向对象编程和元编程技术。
+一定要仔细的阅读我们的讨论部分，另外也要参考下其他章节内容。</p>
+<p>首先，当读取字节数据的时候，通常在文件开始部分会包含文件头和其他的数据结构。
+尽管struct模块可以解包这些数据到一个元组中去，另外一种表示这种信息的方式就是使用一个类。
+就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="k">class</span> <span class="nc">StructField</span><span class="p">:</span>
+    <span class="sd">'''</span>
+<span class="sd">    Descriptor representing a simple structure field</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">instance</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">r</span>
+
+<span class="k">class</span> <span class="nc">Structure</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bytedata</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">memoryview</span><span class="p">(</span><span class="n">bytedata</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这里我们使用了一个描述器来表示每个结构字段，每个描述器包含一个结构兼容格式的代码以及一个字节偏移量，
+存储在内部的内存缓冲中。在 <code class="docutils literal notranslate"><span class="pre">__get__()</span></code> 方法中，<code class="docutils literal notranslate"><span class="pre">struct.unpack_from()</span></code>
+函数被用来从缓冲中解包一个值，省去了额外的分片或复制操作步骤。</p>
+<p><code class="docutils literal notranslate"><span class="pre">Structure</span></code> 类就是一个基础类，接受字节数据并存储在内部的内存缓冲中，并被 <code class="docutils literal notranslate"><span class="pre">StructField</span></code> 描述器使用。
+这里使用了 <code class="docutils literal notranslate"><span class="pre">memoryview()</span></code> ，我们会在后面详细讲解它是用来干嘛的。</p>
+<p>使用这个代码，你现在就能定义一个高层次的结构对象来表示上面表格信息所期望的文件格式。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PolyHeader</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">file_code</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">min_x</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">min_y</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+    <span class="n">num_polys</span> <span class="o">=</span> <span class="n">StructField</span><span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="mi">36</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面的例子利用这个类来读取之前我们写入的多边形数据的头部数据：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'polys.bin'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span> <span class="o">=</span> <span class="n">PolyHeader</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">40</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">file_code</span> <span class="o">==</span> <span class="mh">0x1234</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min_x</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min_y</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max_x</span>
+<span class="go">7.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max_y</span>
+<span class="go">9.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span>
+<span class="go">3</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这个很有趣，不过这种方式还是有一些烦人的地方。首先，尽管你获得了一个类接口的便利，
+但是这个代码还是有点臃肿，还需要使用者指定很多底层的细节(比如重复使用 <code class="docutils literal notranslate"><span class="pre">StructField</span></code> ，指定偏移量等)。
+另外，返回的结果类同样确实一些便利的方法来计算结构的总数。</p>
+<p>任何时候只要你遇到了像这样冗余的类定义，你应该考虑下使用类装饰器或元类。
+元类有一个特性就是它能够被用来填充许多低层的实现细节，从而释放使用者的负担。
+下面我来举个例子，使用元类稍微改造下我们的 <code class="docutils literal notranslate"><span class="pre">Structure</span></code> 类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">StructureMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Metaclass that automatically creates StructField descriptors</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'_fields_'</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">byte_order</span> <span class="o">=</span> <span class="s1">''</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">format</span><span class="p">,</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">format</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">'&lt;'</span><span class="p">,</span><span class="s1">'&gt;'</span><span class="p">,</span><span class="s1">'!'</span><span class="p">,</span><span class="s1">'@'</span><span class="p">)):</span>
+                <span class="n">byte_order</span> <span class="o">=</span> <span class="n">format</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">format</span> <span class="o">=</span> <span class="n">format</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">format</span> <span class="o">=</span> <span class="n">byte_order</span> <span class="o">+</span> <span class="n">format</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">StructField</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">offset</span><span class="p">))</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">format</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'struct_size'</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Structure</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">StructureMeta</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bytedata</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">bytedata</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">struct_size</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>使用新的 <code class="docutils literal notranslate"><span class="pre">Structure</span></code> 类，你可以像下面这样定义一个结构：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PolyHeader</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="s1">'file_code'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_y'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_y'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="s1">'num_polys'</span><span class="p">)</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+<p>正如你所见，这样写就简单多了。我们添加的类方法 <code class="docutils literal notranslate"><span class="pre">from_file()</span></code>
+让我们在不需要知道任何数据的大小和结构的情况下就能轻松的从文件中读取数据。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'polys.bin'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span> <span class="o">=</span> <span class="n">PolyHeader</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">file_code</span> <span class="o">==</span> <span class="mh">0x1234</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min_x</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min_y</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max_x</span>
+<span class="go">7.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max_y</span>
+<span class="go">9.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span>
+<span class="go">3</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>一旦你开始使用了元类，你就可以让它变得更加智能。例如，假设你还想支持嵌套的字节结构，
+下面是对前面元类的一个小的改进，提供了一个新的辅助描述器来达到想要的效果：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NestedStruct</span><span class="p">:</span>
+    <span class="sd">'''</span>
+<span class="sd">    Descriptor representing a nested structure</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">struct_type</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">struct_type</span> <span class="o">=</span> <span class="n">struct_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">_buffer</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">struct_type</span><span class="o">.</span><span class="n">struct_size</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">struct_type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># Save resulting structure back on instance to avoid</span>
+            <span class="c1"># further recomputation of this step</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">class</span> <span class="nc">StructureMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Metaclass that automatically creates StructField descriptors</span>
+<span class="sd">    '''</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'_fields_'</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">byte_order</span> <span class="o">=</span> <span class="s1">''</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">format</span><span class="p">,</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">StructureMeta</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span>
+                        <span class="n">NestedStruct</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">offset</span><span class="p">))</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="n">format</span><span class="o">.</span><span class="n">struct_size</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">format</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">'&lt;'</span><span class="p">,</span><span class="s1">'&gt;'</span><span class="p">,</span><span class="s1">'!'</span><span class="p">,</span><span class="s1">'@'</span><span class="p">)):</span>
+                    <span class="n">byte_order</span> <span class="o">=</span> <span class="n">format</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">format</span> <span class="o">=</span> <span class="n">format</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="n">format</span> <span class="o">=</span> <span class="n">byte_order</span> <span class="o">+</span> <span class="n">format</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">StructField</span><span class="p">(</span><span class="n">format</span><span class="p">,</span> <span class="n">offset</span><span class="p">))</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">format</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'struct_size'</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>在这段代码中，<code class="docutils literal notranslate"><span class="pre">NestedStruct</span></code> 描述器被用来叠加另外一个定义在某个内存区域上的结构。
+它通过将原始内存缓冲进行切片操作后实例化给定的结构类型。由于底层的内存缓冲区是通过一个内存视图初始化的，
+所以这种切片操作不会引发任何的额外的内存复制。相反，它仅仅就是之前的内存的一个叠加而已。
+另外，为了防止重复实例化，通过使用和8.10小节同样的技术，描述器保存了该实例中的内部结构对象。</p>
+<p>使用这个新的修正版，你就可以像下面这样编写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">)</span>
+    <span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">PolyHeader</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="s1">'file_code'</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">Point</span><span class="p">,</span> <span class="s1">'min'</span><span class="p">),</span> <span class="c1"># nested struct</span>
+        <span class="p">(</span><span class="n">Point</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">),</span> <span class="c1"># nested struct</span>
+        <span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="s1">'num_polys'</span><span class="p">)</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+<p>令人惊讶的是，它也能按照预期的正常工作，我们实际操作下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'polys.bin'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span> <span class="o">=</span> <span class="n">PolyHeader</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">file_code</span> <span class="o">==</span> <span class="mh">0x1234</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min</span> <span class="c1"># Nested structure</span>
+<span class="go">&lt;__main__.Point object at 0x1006a48d0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">x</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">y</span>
+<span class="go">0.5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max</span><span class="o">.</span><span class="n">x</span>
+<span class="go">7.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">max</span><span class="o">.</span><span class="n">y</span>
+<span class="go">9.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span>
+<span class="go">3</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>到目前为止，一个处理定长记录的框架已经写好了。但是如果组件记录是变长的呢？
+比如，多边形文件包含变长的部分。</p>
+<p>一种方案是写一个类来表示字节数据，同时写一个工具函数来通过多少方式解析内容。跟6.11小节的代码很类似：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SizedRecord</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bytedata</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">memoryview</span><span class="p">(</span><span class="n">bytedata</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">size_fmt</span><span class="p">,</span> <span class="n">includes_size</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">sz_nbytes</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">size_fmt</span><span class="p">)</span>
+        <span class="n">sz_bytes</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sz_nbytes</span><span class="p">)</span>
+        <span class="n">sz</span><span class="p">,</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">size_fmt</span><span class="p">,</span> <span class="n">sz_bytes</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sz</span> <span class="o">-</span> <span class="n">includes_size</span> <span class="o">*</span> <span class="n">sz_nbytes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">iter_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">Struct</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">off</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">),</span> <span class="n">s</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">s</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="n">off</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">StructureMeta</span><span class="p">):</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">struct_size</span>
+            <span class="k">for</span> <span class="n">off</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">),</span> <span class="n">size</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">[</span><span class="n">off</span><span class="p">:</span><span class="n">off</span><span class="o">+</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">yield</span> <span class="n">code</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>类方法 <code class="docutils literal notranslate"><span class="pre">SizedRecord.from_file()</span></code> 是一个工具，用来从一个文件中读取带大小前缀的数据块，
+这也是很多文件格式常用的方式。作为输入，它接受一个包含大小编码的结构格式编码，并且也是自己形式。
+可选的 <code class="docutils literal notranslate"><span class="pre">includes_size</span></code> 参数指定了字节数是否包含头部大小。
+下面是一个例子教你怎样使用从多边形文件中读取单独的多边形数据：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'polys.bin'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span> <span class="o">=</span> <span class="n">PolyHeader</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">polydata</span> <span class="o">=</span> <span class="p">[</span> <span class="n">SizedRecord</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">'&lt;i'</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span><span class="p">)</span> <span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">polydata</span>
+<span class="go">[&lt;__main__.SizedRecord object at 0x1006a4d50&gt;,</span>
+<span class="go">&lt;__main__.SizedRecord object at 0x1006a4f50&gt;,</span>
+<span class="go">&lt;__main__.SizedRecord object at 0x10070da90&gt;]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>可以看出，<code class="docutils literal notranslate"><span class="pre">SizedRecord</span></code> 实例的内容还没有被解析出来。
+可以使用 <code class="docutils literal notranslate"><span class="pre">iter_as()</span></code> 方法来达到目的，这个方法接受一个结构格式化编码或者是 <code class="docutils literal notranslate"><span class="pre">Structure</span></code> 类作为输入。
+这样子可以很灵活的去解析数据，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">poly</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">polydata</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">'Polygon'</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">poly</span><span class="o">.</span><span class="n">iter_as</span><span class="p">(</span><span class="s1">'&lt;dd'</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">Polygon 0</span>
+<span class="go">(1.0, 2.5)</span>
+<span class="go">(3.5, 4.0)</span>
+<span class="go">(2.5, 1.5)</span>
+<span class="go">Polygon 1</span>
+<span class="go">(7.0, 1.2)</span>
+<span class="go">(5.1, 3.0)</span>
+<span class="go">(0.5, 7.5)</span>
+<span class="go">(0.8, 9.0)</span>
+<span class="go">Polygon 2</span>
+<span class="go">(3.4, 6.3)</span>
+<span class="go">(1.2, 0.5)</span>
+<span class="go">(4.6, 9.2)</span>
+<span class="go">&gt;&gt;&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">poly</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">polydata</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">'Polygon'</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">poly</span><span class="o">.</span><span class="n">iter_as</span><span class="p">(</span><span class="n">Point</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">Polygon 0</span>
+<span class="go">1.0 2.5</span>
+<span class="go">3.5 4.0</span>
+<span class="go">2.5 1.5</span>
+<span class="go">Polygon 1</span>
+<span class="go">7.0 1.2</span>
+<span class="go">5.1 3.0</span>
+<span class="go">0.5 7.5</span>
+<span class="go">0.8 9.0</span>
+<span class="go">Polygon 2</span>
+<span class="go">3.4 6.3</span>
+<span class="go">1.2 0.5</span>
+<span class="go">4.6 9.2</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>将所有这些结合起来，下面是一个 <code class="docutils literal notranslate"><span class="pre">read_polys()</span></code> 函数的另外一个修正版：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">'&lt;d'</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">)</span>
+    <span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">PolyHeader</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="s1">'file_code'</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">Point</span><span class="p">,</span> <span class="s1">'min'</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">Point</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="s1">'num_polys'</span><span class="p">)</span>
+    <span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">read_polys</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">polys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">phead</span> <span class="o">=</span> <span class="n">PolyHeader</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">phead</span><span class="o">.</span><span class="n">num_polys</span><span class="p">):</span>
+            <span class="n">rec</span> <span class="o">=</span> <span class="n">SizedRecord</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">'&lt;i'</span><span class="p">)</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rec</span><span class="o">.</span><span class="n">iter_as</span><span class="p">(</span><span class="n">Point</span><span class="p">)</span> <span class="p">]</span>
+            <span class="n">polys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">polys</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>这一节向你展示了许多高级的编程技术，包括描述器，延迟计算，元类，类变量和内存视图。
+然而，它们都为了同一个特定的目标服务。</p>
+<p>上面的实现的一个主要特征是它是基于懒解包的思想。当一个 <code class="docutils literal notranslate"><span class="pre">Structure</span></code> 实例被创建时，
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 仅仅只是创建一个字节数据的内存视图，没有做其他任何事。
+特别的，这时候并没有任何的解包或者其他与结构相关的操作发生。
+这样做的一个动机是你可能仅仅只对一个字节记录的某一小部分感兴趣。我们只需要解包你需要访问的部分，而不是整个文件。</p>
+<p>为了实现懒解包和打包，需要使用 <code class="docutils literal notranslate"><span class="pre">StructField</span></code> 描述器类。
+用户在 <code class="docutils literal notranslate"><span class="pre">_fields_</span></code> 中列出来的每个属性都会被转化成一个 <code class="docutils literal notranslate"><span class="pre">StructField</span></code> 描述器，
+它将相关结构格式码和偏移值保存到存储缓存中。元类 <code class="docutils literal notranslate"><span class="pre">StructureMeta</span></code> 在多个结构类被定义时自动创建了这些描述器。
+我们使用元类的一个主要原因是它使得用户非常方便的通过一个高层描述就能指定结构格式，而无需考虑低层的细节问题。</p>
+<p><code class="docutils literal notranslate"><span class="pre">StructureMeta</span></code> 的一个很微妙的地方就是它会固定字节数据顺序。
+也就是说，如果任意的属性指定了一个字节顺序(&lt;表示低位优先 或者 &gt;表示高位优先)，
+那后面所有字段的顺序都以这个顺序为准。这么做可以帮助避免额外输入，但是在定义的中间我们仍然可能切换顺序的。
+比如，你可能有一些比较复杂的结构，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ShapeFile</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="s1">'&gt;i'</span><span class="p">,</span> <span class="s1">'file_code'</span><span class="p">),</span> <span class="c1"># Big endian</span>
+        <span class="p">(</span><span class="s1">'20s'</span><span class="p">,</span> <span class="s1">'unused'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="s1">'file_length'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'&lt;i'</span><span class="p">,</span> <span class="s1">'version'</span><span class="p">),</span> <span class="c1"># Little endian</span>
+        <span class="p">(</span><span class="s1">'i'</span><span class="p">,</span> <span class="s1">'shape_type'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_y'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_x'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_y'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_z'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_z'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'min_m'</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">'d'</span><span class="p">,</span> <span class="s1">'max_m'</span><span class="p">)</span> <span class="p">]</span>
+</pre></div>
+</div>
+<p>之前我们提到过，<code class="docutils literal notranslate"><span class="pre">memoryview()</span></code> 的使用可以帮助我们避免内存的复制。
+当结构存在嵌套的时候，<code class="docutils literal notranslate"><span class="pre">memoryviews</span></code> 可以叠加同一内存区域上定义的机构的不同部分。
+这个特性比较微妙，但是它关注的是内存视图与普通字节数组的切片操作行为。
+如果你在一个字节字符串或字节数组上执行切片操作，你通常会得到一个数据的拷贝。
+而内存视图切片不是这样的，它仅仅是在已存在的内存上面叠加而已。因此，这种方式更加高效。</p>
+<p>还有很多相关的章节可以帮助我们扩展这里讨论的方案。
+参考8.13小节使用描述器构建一个类型系统。
+8.10小节有更多关于延迟计算属性值的讨论，并且跟NestedStruct描述器的实现也有关。
+9.19小节有一个使用元类来初始化类成员的例子，和 <code class="docutils literal notranslate"><span class="pre">StructureMeta</span></code> 类非常相似。
+Python的 <code class="docutils literal notranslate"><span class="pre">ctypes</span></code> 源码同样也很有趣，它提供了对定义数据结构、数据结构嵌套这些相似功能的支持。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

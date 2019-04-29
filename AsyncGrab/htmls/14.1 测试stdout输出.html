@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>14.1 测试stdout输出 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p14_test_debug_and_exceptions.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p14_test_debug_and_exceptions.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="stdout">
+<h1>14.1 测试stdout输出<a class="headerlink" href="#stdout" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你的程序中有个方法会输出到标准输出中（sys.stdout）。也就是说它会将文本打印到屏幕上面。
+你想写个测试来证明它，给定一个输入，相应的输出能正常显示出来。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">unittest.mock</span></code> 模块中的 <code class="docutils literal notranslate"><span class="pre">patch()</span></code> 函数，
+使用起来非常简单，可以为单个测试模拟 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 然后回滚，
+并且不产生大量的临时变量或在测试用例直接暴露状态变量。</p>
+<p>作为一个例子，我们在 <code class="docutils literal notranslate"><span class="pre">mymodule</span></code> 模块中定义如下一个函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># mymodule.py</span>
+
+<span class="k">def</span> <span class="nf">urlprint</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s1">'{}://{}.{}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>默认情况下内置的 <code class="docutils literal notranslate"><span class="pre">print</span></code> 函数会将输出发送到 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 。
+为了测试输出真的在那里，你可以使用一个替身对象来模拟它，然后使用断言来确认结果。
+使用 <code class="docutils literal notranslate"><span class="pre">unittest.mock</span></code> 模块的 <code class="docutils literal notranslate"><span class="pre">patch()</span></code> 方法可以很方便的在测试运行的上下文中替换对象，
+并且当测试完成时候自动返回它们的原有状态。下面是对 <code class="docutils literal notranslate"><span class="pre">mymodule</span></code> 模块的测试代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span> <span class="nn">unittest</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="kn">import</span> <span class="n">patch</span>
+<span class="kn">import</span> <span class="nn">mymodule</span>
+
+<span class="k">class</span> <span class="nc">TestURLPrint</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">test_url_gets_to_stdout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">protocol</span> <span class="o">=</span> <span class="s1">'http'</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s1">'www'</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="s1">'example.com'</span>
+        <span class="n">expected_url</span> <span class="o">=</span> <span class="s1">'{}://{}.{}</span><span class="se">\n</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">'sys.stdout'</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="n">StringIO</span><span class="p">())</span> <span class="k">as</span> <span class="n">fake_out</span><span class="p">:</span>
+            <span class="n">mymodule</span><span class="o">.</span><span class="n">urlprint</span><span class="p">(</span><span class="n">protocol</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">fake_out</span><span class="o">.</span><span class="n">getvalue</span><span class="p">(),</span> <span class="n">expected_url</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">urlprint()</span></code> 函数接受三个参数，测试方法开始会先设置每一个参数的值。
+<code class="docutils literal notranslate"><span class="pre">expected_url</span></code> 变量被设置成包含期望的输出的字符串。</p>
+<p><code class="docutils literal notranslate"><span class="pre">unittest.mock.patch()</span></code> 函数被用作一个上下文管理器，使用 <code class="docutils literal notranslate"><span class="pre">StringIO</span></code> 对象来代替 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> .
+<code class="docutils literal notranslate"><span class="pre">fake_out</span></code> 变量是在该进程中被创建的模拟对象。
+在with语句中使用它可以执行各种检查。当with语句结束时，<code class="docutils literal notranslate"><span class="pre">patch</span></code> 会将所有东西恢复到测试开始前的状态。
+有一点需要注意的是某些对Python的C扩展可能会忽略掉 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 的配置而直接写入到标准输出中。
+限于篇幅，本节不会涉及到这方面的讲解，它适用于纯Python代码。
+如果你真的需要在C扩展中捕获I/O，你可以先打开一个临时文件，然后将标准输出重定向到该文件中。
+更多关于捕获以字符串形式捕获I/O和 <code class="docutils literal notranslate"><span class="pre">StringIO</span></code> 对象请参阅5.6小节。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

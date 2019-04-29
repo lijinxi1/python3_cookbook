@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>7.9 将单方法的类转换为函数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>7.9 将单方法的类转换为函数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你有一个除 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法外只定义了一个方法的类。为了简化代码，你想将它转换成一个函数。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>大多数情况下，可以使用闭包来将单个方法的类转换成函数。
+举个例子，下面示例中的类允许使用者根据某个模板方案来获取到URL链接地址。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">urllib.request</span> <span class="kn">import</span> <span class="n">urlopen</span>
+
+<span class="k">class</span> <span class="nc">UrlTemplate</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+
+<span class="c1"># Example use. Download stock data from yahoo</span>
+<span class="n">yahoo</span> <span class="o">=</span> <span class="n">UrlTemplate</span><span class="p">(</span><span class="s1">'http://finance.yahoo.com/d/quotes.csv?s={names}&amp;f={fields}'</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">yahoo</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="s1">'IBM,AAPL,FB'</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">'sl1c1v'</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>这个类可以被一个更简单的函数来代替：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">urltemplate</span><span class="p">(</span><span class="n">template</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">opener</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">opener</span>
+
+<span class="c1"># Example use</span>
+<span class="n">yahoo</span> <span class="o">=</span> <span class="n">urltemplate</span><span class="p">(</span><span class="s1">'http://finance.yahoo.com/d/quotes.csv?s={names}&amp;f={fields}'</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">yahoo</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="s1">'IBM,AAPL,FB'</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="s1">'sl1c1v'</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>大部分情况下，你拥有一个单方法类的原因是需要存储某些额外的状态来给方法使用。
+比如，定义UrlTemplate类的唯一目的就是先在某个地方存储模板值，以便将来可以在open()方法中使用。</p>
+<p>使用一个内部函数或者闭包的方案通常会更优雅一些。简单来讲，一个闭包就是一个函数，
+只不过在函数内部带上了一个额外的变量环境。闭包关键特点就是它会记住自己被定义时的环境。
+因此，在我们的解决方案中，<code class="docutils literal notranslate"><span class="pre">opener()</span></code> 函数记住了 <code class="docutils literal notranslate"><span class="pre">template</span></code> 参数的值，并在接下来的调用中使用它。</p>
+<p>任何时候只要你碰到需要给某个函数增加额外的状态信息的问题，都可以考虑使用闭包。
+相比将你的函数转换成一个类而言，闭包通常是一种更加简洁和优雅的方案。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

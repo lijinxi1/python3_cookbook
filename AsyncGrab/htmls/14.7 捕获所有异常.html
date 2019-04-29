@@ -1,0 +1,129 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>14.7 捕获所有异常 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>14.7 捕获所有异常<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>怎样捕获代码中的所有异常？</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>想要捕获所有的异常，可以直接捕获 <code class="docutils literal notranslate"><span class="pre">Exception</span></code> 即可：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+   <span class="o">...</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+   <span class="o">...</span>
+   <span class="n">log</span><span class="p">(</span><span class="s1">'Reason:'</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>       <span class="c1"># Important!</span>
+</pre></div>
+</div>
+<p>这个将会捕获除了 <code class="docutils literal notranslate"><span class="pre">SystemExit</span></code> 、 <code class="docutils literal notranslate"><span class="pre">KeyboardInterrupt</span></code> 和 <code class="docutils literal notranslate"><span class="pre">GeneratorExit</span></code> 之外的所有异常。
+如果你还想捕获这三个异常，将 <code class="docutils literal notranslate"><span class="pre">Exception</span></code> 改成 <code class="docutils literal notranslate"><span class="pre">BaseException</span></code> 即可。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>捕获所有异常通常是由于程序员在某些复杂操作中并不能记住所有可能的异常。
+如果你不是很细心的人，这也是编写不易调试代码的一个简单方法。</p>
+<p>正因如此，如果你选择捕获所有异常，那么在某个地方（比如日志文件、打印异常到屏幕）打印确切原因就比较重要了。
+如果你没有这样做，有时候你看到异常打印时可能摸不着头脑，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_int</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">"Couldn't parse"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>试着运行这个函数，结果如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_int</span><span class="p">(</span><span class="s1">'n/a'</span><span class="p">)</span>
+<span class="go">Couldn't parse</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_int</span><span class="p">(</span><span class="s1">'42'</span><span class="p">)</span>
+<span class="go">Couldn't parse</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这时候你就会挠头想：“这咋回事啊？” 假如你像下面这样重写这个函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_int</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">"Couldn't parse"</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Reason:'</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这时候你能获取如下输出，指明了有个编程错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_int</span><span class="p">(</span><span class="s1">'42'</span><span class="p">)</span>
+<span class="go">Couldn't parse</span>
+<span class="go">Reason: global name 'v' is not defined</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>很明显，你应该尽可能将异常处理器定义的精准一些。
+不过，要是你必须捕获所有异常，确保打印正确的诊断信息或将异常传播出去，这样不会丢失掉异常。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

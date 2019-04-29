@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>7.8 减少可调用对象的参数个数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>7.8 减少可调用对象的参数个数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你有一个被其他python代码使用的callable对象，可能是一个回调函数或者是一个处理器，
+但是它的参数太多了，导致调用时出错。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>如果需要减少某个函数的参数个数，你可以使用 <code class="docutils literal notranslate"><span class="pre">functools.partial()</span></code> 。
+<code class="docutils literal notranslate"><span class="pre">partial()</span></code> 函数允许你给一个或多个参数设置固定的值，减少接下来被调用时的参数个数。
+为了演示清楚，假设你有下面这样的函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>现在我们使用 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 函数来固定某些参数值：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spam</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># a = 1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">1 2 3 4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="go">1 4 5 6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spam</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span> <span class="c1"># d = 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">1 2 3 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">4 5 5 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spam</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span> <span class="c1"># a = 1, b = 2, d = 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">1 2 3 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">1 2 4 42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">1 2 5 42</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>可以看出 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 固定某些参数并返回一个新的callable对象。这个新的callable接受未赋值的参数，
+然后跟之前已经赋值过的参数合并起来，最后将所有参数传递给原始函数。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>本节要解决的问题是让原本不兼容的代码可以一起工作。下面我会列举一系列的例子。</p>
+<p>第一个例子是，假设你有一个点的列表来表示(x,y)坐标元组。
+你可以使用下面的函数来计算两点之间的距离：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">):</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">p1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">p2</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>现在假设你想以某个点为基点，根据点和基点之间的距离来排序所有的这些点。
+列表的 <code class="docutils literal notranslate"><span class="pre">sort()</span></code> 方法接受一个关键字参数来自定义排序逻辑，
+但是它只能接受一个单个参数的函数(distance()很明显是不符合条件的)。
+现在我们可以通过使用 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 来解决这个问题：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pt</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span><span class="n">pt</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span>
+<span class="go">[(3, 4), (1, 2), (5, 6), (7, 8)]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>更进一步，<code class="docutils literal notranslate"><span class="pre">partial()</span></code> 通常被用来微调其他库函数所使用的回调函数的参数。
+例如，下面是一段代码，使用 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 来异步计算一个结果值，
+然后这个值被传递给一个接受一个result值和一个可选logging参数的回调函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">output_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Got: </span><span class="si">%r</span><span class="s1">'</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+<span class="c1"># A sample function</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">logging</span>
+    <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'test'</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">callback</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">output_result</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">))</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>当给 <code class="docutils literal notranslate"><span class="pre">apply_async()</span></code> 提供回调函数时，通过使用 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 传递额外的 <code class="docutils literal notranslate"><span class="pre">logging</span></code> 参数。
+而 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 对这些一无所知——它仅仅只是使用单个值来调用回调函数。</p>
+<p>作为一个类似的例子，考虑下编写网络服务器的问题，<code class="docutils literal notranslate"><span class="pre">socketserver</span></code> 模块让它变得很容易。
+下面是个简单的echo服务器：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">socketserver</span> <span class="kn">import</span> <span class="n">StreamRequestHandler</span><span class="p">,</span> <span class="n">TCPServer</span>
+
+<span class="k">class</span> <span class="nc">EchoHandler</span><span class="p">(</span><span class="n">StreamRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfile</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s1">'GOT:'</span> <span class="o">+</span> <span class="n">line</span><span class="p">)</span>
+
+<span class="n">serv</span> <span class="o">=</span> <span class="n">TCPServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span> <span class="mi">15000</span><span class="p">),</span> <span class="n">EchoHandler</span><span class="p">)</span>
+<span class="n">serv</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>不过，假设你想给EchoHandler增加一个可以接受其他配置选项的 <code class="docutils literal notranslate"><span class="pre">__init__</span></code> 方法。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EchoHandler</span><span class="p">(</span><span class="n">StreamRequestHandler</span><span class="p">):</span>
+    <span class="c1"># ack is added keyword-only argument. *args, **kwargs are</span>
+    <span class="c1"># any normal parameters supplied (which are passed on)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">ack</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ack</span> <span class="o">=</span> <span class="n">ack</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfile</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ack</span> <span class="o">+</span> <span class="n">line</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这么修改后，我们就不需要显式地在TCPServer类中添加前缀了。
+但是你再次运行程序后会报类似下面的错误：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ne">Exception</span> <span class="n">happened</span> <span class="n">during</span> <span class="n">processing</span> <span class="n">of</span> <span class="n">request</span> <span class="kn">from</span> <span class="p">(</span><span class="s1">'127.0.0.1'</span><span class="p">,</span> <span class="mi">59834</span><span class="p">)</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+<span class="o">...</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="fm">__init__</span><span class="p">()</span> <span class="n">missing</span> <span class="mi">1</span> <span class="n">required</span> <span class="n">keyword</span><span class="o">-</span><span class="n">only</span> <span class="n">argument</span><span class="p">:</span> <span class="s1">'ack'</span>
+</pre></div>
+</div>
+<p>初看起来好像很难修正这个错误，除了修改 <code class="docutils literal notranslate"><span class="pre">socketserver</span></code> 模块源代码或者使用某些奇怪的方法之外。
+但是，如果使用 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 就能很轻松的解决——给它传递 <code class="docutils literal notranslate"><span class="pre">ack</span></code> 参数的值来初始化即可，如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="n">serv</span> <span class="o">=</span> <span class="n">TCPServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span> <span class="mi">15000</span><span class="p">),</span> <span class="n">partial</span><span class="p">(</span><span class="n">EchoHandler</span><span class="p">,</span> <span class="n">ack</span><span class="o">=</span><span class="sa">b</span><span class="s1">'RECEIVED:'</span><span class="p">))</span>
+<span class="n">serv</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>在这个例子中，<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法中的ack参数声明方式看上去很有趣，其实就是声明ack为一个强制关键字参数。
+关于强制关键字参数问题我们在7.2小节我们已经讨论过了，读者可以再去回顾一下。</p>
+<p>很多时候 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 能实现的效果，lambda表达式也能实现。比如，之前的几个例子可以使用下面这样的表达式：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">points</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">distance</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+<span class="n">p</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">result</span><span class="p">:</span> <span class="n">output_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="n">log</span><span class="p">))</span>
+<span class="n">serv</span> <span class="o">=</span> <span class="n">TCPServer</span><span class="p">((</span><span class="s1">''</span><span class="p">,</span> <span class="mi">15000</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">EchoHandler</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">ack</span><span class="o">=</span><span class="sa">b</span><span class="s1">'RECEIVED:'</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>这样写也能实现同样的效果，不过相比而已会显得比较臃肿，对于阅读代码的人来讲也更加难懂。
+这时候使用 <code class="docutils literal notranslate"><span class="pre">partial()</span></code> 可以更加直观的表达你的意图(给某些参数预先赋值)。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

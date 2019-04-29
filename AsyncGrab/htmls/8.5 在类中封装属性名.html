@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.5 在类中封装属性名 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.5 在类中封装属性名<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想封装类的实例上面的“私有”数据，但是Python语言并没有访问控制。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Python程序员不去依赖语言特性去封装数据，而是通过遵循一定的属性和方法命名规约来达到这个效果。
+第一个约定是任何以单下划线_开头的名字都应该是内部实现。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># An internal attribute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">public</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># A public attribute</span>
+
+    <span class="k">def</span> <span class="nf">public_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">'''</span>
+<span class="sd">        A public method</span>
+<span class="sd">        '''</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_internal_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Python并不会真的阻止别人访问内部名称。但是如果你这么做肯定是不好的，可能会导致脆弱的代码。
+同时还要注意到，使用下划线开头的约定同样适用于模块名和模块级别函数。
+例如，如果你看到某个模块名以单下划线开头(比如_socket)，那它就是内部实现。
+类似的，模块级别函数比如 <code class="docutils literal notranslate"><span class="pre">sys._getframe()</span></code> 在使用的时候就得加倍小心了。</p>
+<p>你还可能会遇到在类定义中使用两个下划线(__)开头的命名。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__private</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__private_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">public_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__private_method</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>使用双下划线开始会导致访问名称变成其他形式。
+比如，在前面的类B中，私有属性会被分别重命名为 <code class="docutils literal notranslate"><span class="pre">_B__private</span></code> 和 <code class="docutils literal notranslate"><span class="pre">_B__private_method</span></code> 。
+这时候你可能会问这样重命名的目的是什么，答案就是继承——这种属性通过继承是无法被覆盖的。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__private</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># Does not override B.__private</span>
+
+    <span class="c1"># Does not override B.__private_method()</span>
+    <span class="k">def</span> <span class="nf">__private_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>这里，私有名称 <code class="docutils literal notranslate"><span class="pre">__private</span></code> 和 <code class="docutils literal notranslate"><span class="pre">__private_method</span></code>
+被重命名为 <code class="docutils literal notranslate"><span class="pre">_C__private</span></code> 和 <code class="docutils literal notranslate"><span class="pre">_C__private_method</span></code> ，这个跟父类B中的名称是完全不同的。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>上面提到有两种不同的编码约定(单下划线和双下划线)来命名私有属性，那么问题就来了：到底哪种方式好呢？
+大多数而言，你应该让你的非公共名称以单下划线开头。但是，如果你清楚你的代码会涉及到子类，
+并且有些内部属性应该在子类中隐藏起来，那么才考虑使用双下划线方案。</p>
+<p>还有一点要注意的是，有时候你定义的一个变量和某个保留关键字冲突，这时候可以使用单下划线作为后缀，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lambda_</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="c1"># Trailing _ to avoid clash with lambda keyword</span>
+</pre></div>
+</div>
+<p>这里我们并不使用单下划线前缀的原因是它避免误解它的使用初衷
+(如使用单下划线前缀的目的是为了防止命名冲突而不是指明这个属性是私有的)。
+通过使用单下划线后缀可以解决这个问题。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

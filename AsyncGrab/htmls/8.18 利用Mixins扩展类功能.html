@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.18 利用Mixins扩展类功能 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mixins">
+<h1>8.18 利用Mixins扩展类功能<a class="headerlink" href="#mixins" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你有很多有用的方法，想使用它们来扩展其他类的功能。但是这些类并没有任何继承的关系。
+因此你不能简单的将这些方法放入一个基类，然后被其他类继承。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>通常当你想自定义类的时候会碰上这些问题。可能是某个库提供了一些基础类，
+你可以利用它们来构造你自己的类。</p>
+<p>假设你想扩展映射对象，给它们添加日志、唯一性设置、类型检查等等功能。下面是一些混入类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LoggedMappingMixin</span><span class="p">:</span>
+    <span class="sd">"""</span>
+<span class="sd">    Add logging to get/set/delete operations for debugging.</span>
+<span class="sd">    """</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>  <span class="c1"># 混入类都没有实例变量，因为直接实例化混入类没有任何意义</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Getting '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Setting {} = {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Deleting '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SetOnceMappingMixin</span><span class="p">:</span>
+    <span class="sd">'''</span>
+<span class="sd">    Only allow a key to be set once.</span>
+<span class="sd">    '''</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="s1">' already set'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">StringKeysMappingMixin</span><span class="p">:</span>
+    <span class="sd">'''</span>
+<span class="sd">    Restrict keys to strings only</span>
+<span class="sd">    '''</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'keys must be strings'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这些类单独使用起来没有任何意义，事实上如果你去实例化任何一个类，除了产生异常外没任何作用。
+它们是用来通过多继承来和其他映射对象混入使用的。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LoggedDict</span><span class="p">(</span><span class="n">LoggedMappingMixin</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="n">d</span> <span class="o">=</span> <span class="n">LoggedDict</span><span class="p">()</span>
+<span class="n">d</span><span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">23</span>
+<span class="k">print</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">'x'</span><span class="p">])</span>
+<span class="k">del</span> <span class="n">d</span><span class="p">[</span><span class="s1">'x'</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="k">class</span> <span class="nc">SetOnceDefaultDict</span><span class="p">(</span><span class="n">SetOnceMappingMixin</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="n">d</span> <span class="o">=</span> <span class="n">SetOnceDefaultDict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="n">d</span><span class="p">[</span><span class="s1">'x'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">d</span><span class="p">[</span><span class="s1">'x'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="c1"># d['x'] = 23  # KeyError: 'x already set'</span>
+</pre></div>
+</div>
+<p>这个例子中，可以看到混入类跟其他已存在的类(比如dict、defaultdict和OrderedDict)结合起来使用，一个接一个。
+结合后就能发挥正常功效了。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>混入类在标准库中很多地方都出现过，通常都是用来像上面那样扩展某些类的功能。
+它们也是多继承的一个主要用途。比如，当你编写网络代码时候，
+你会经常使用 <code class="docutils literal notranslate"><span class="pre">socketserver</span></code> 模块中的 <code class="docutils literal notranslate"><span class="pre">ThreadingMixIn</span></code> 来给其他网络相关类增加多线程支持。
+例如，下面是一个多线程的XML-RPC服务：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">xmlrpc.server</span> <span class="kn">import</span> <span class="n">SimpleXMLRPCServer</span>
+<span class="kn">from</span> <span class="nn">socketserver</span> <span class="kn">import</span> <span class="n">ThreadingMixIn</span>
+<span class="k">class</span> <span class="nc">ThreadedXMLRPCServer</span><span class="p">(</span><span class="n">ThreadingMixIn</span><span class="p">,</span> <span class="n">SimpleXMLRPCServer</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>同时在一些大型库和框架中也会发现混入类的使用，用途同样是增强已存在的类的功能和一些可选特征。</p>
+<p>对于混入类，有几点需要记住。首先是，混入类不能直接被实例化使用。
+其次，混入类没有自己的状态信息，也就是说它们并没有定义 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法，并且没有实例属性。
+这也是为什么我们在上面明确定义了 <code class="docutils literal notranslate"><span class="pre">__slots__</span> <span class="pre">=</span> <span class="pre">()</span></code> 。</p>
+<p>还有一种实现混入类的方式就是使用类装饰器，如下所示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">LoggedMapping</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="sd">"""第二种方式：使用类装饰器"""</span>
+    <span class="n">cls_getitem</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__getitem__</span>
+    <span class="n">cls_setitem</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__setitem__</span>
+    <span class="n">cls_delitem</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__delitem__</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Getting '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cls_getitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Setting {} = {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cls_setitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Deleting '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cls_delitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+    <span class="bp">cls</span><span class="o">.</span><span class="fm">__getitem__</span> <span class="o">=</span> <span class="fm">__getitem__</span>
+    <span class="bp">cls</span><span class="o">.</span><span class="fm">__setitem__</span> <span class="o">=</span> <span class="fm">__setitem__</span>
+    <span class="bp">cls</span><span class="o">.</span><span class="fm">__delitem__</span> <span class="o">=</span> <span class="fm">__delitem__</span>
+    <span class="k">return</span> <span class="bp">cls</span>
+
+
+<span class="nd">@LoggedMapping</span>
+<span class="k">class</span> <span class="nc">LoggedDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>这个效果跟之前的是一样的，而且不再需要使用多继承了。参考9.12小节获取更多类装饰器的信息，
+参考8.13小节查看更多混入类和类装饰器的例子。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

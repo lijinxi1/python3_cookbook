@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>13.3 解析命令行选项 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>13.3 解析命令行选项<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你的程序如何能够解析命令行选项（位于sys.argv中）</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">argparse</span></code> 模块可被用来解析命令行选项。下面一个简单例子演示了最基本的用法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># search.py</span>
+<span class="sd">'''</span>
+<span class="sd">Hypothetical command-line tool for searching a collection of</span>
+<span class="sd">files for one or more text patterns.</span>
+<span class="sd">'''</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">'Search some files'</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s1">'filenames'</span><span class="p">,</span><span class="n">metavar</span><span class="o">=</span><span class="s1">'filename'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'*'</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-p'</span><span class="p">,</span> <span class="s1">'--pat'</span><span class="p">,</span><span class="n">metavar</span><span class="o">=</span><span class="s1">'pattern'</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">dest</span><span class="o">=</span><span class="s1">'patterns'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'append'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'text pattern to search for'</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-v'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'verbose'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'verbose mode'</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-o'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'outfile'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'output file'</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--speed'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'speed'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+                    <span class="n">choices</span><span class="o">=</span><span class="p">{</span><span class="s1">'slow'</span><span class="p">,</span><span class="s1">'fast'</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="s1">'slow'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'search speed'</span><span class="p">)</span>
+
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="c1"># Output the collected arguments</span>
+<span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">filenames</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">patterns</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outfile</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">speed</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>该程序定义了一个如下使用的命令行解析器：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">h</span>
+<span class="n">usage</span><span class="p">:</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">p</span> <span class="n">pattern</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">v</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTFILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">speed</span> <span class="p">{</span><span class="n">slow</span><span class="p">,</span><span class="n">fast</span><span class="p">}]</span>
+                 <span class="p">[</span><span class="n">filename</span> <span class="p">[</span><span class="n">filename</span> <span class="o">...</span><span class="p">]]</span>
+
+<span class="n">Search</span> <span class="n">some</span> <span class="n">files</span>
+
+<span class="n">positional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="n">filename</span>
+
+<span class="n">optional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>            <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="nb">exit</span>
+  <span class="o">-</span><span class="n">p</span> <span class="n">pattern</span><span class="p">,</span> <span class="o">--</span><span class="n">pat</span> <span class="n">pattern</span>
+                        <span class="n">text</span> <span class="n">pattern</span> <span class="n">to</span> <span class="n">search</span> <span class="k">for</span>
+  <span class="o">-</span><span class="n">v</span>                    <span class="n">verbose</span> <span class="n">mode</span>
+  <span class="o">-</span><span class="n">o</span> <span class="n">OUTFILE</span>            <span class="n">output</span> <span class="nb">file</span>
+  <span class="o">--</span><span class="n">speed</span> <span class="p">{</span><span class="n">slow</span><span class="p">,</span><span class="n">fast</span><span class="p">}</span>   <span class="n">search</span> <span class="n">speed</span>
+</pre></div>
+</div>
+<p>下面的部分演示了程序中的数据部分。仔细观察print()语句的打印输出。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="n">foo</span><span class="o">.</span><span class="n">txt</span> <span class="n">bar</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">usage</span><span class="p">:</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span><span class="n">p</span> <span class="n">pattern</span> <span class="p">[</span><span class="o">-</span><span class="n">v</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTFILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">speed</span> <span class="p">{</span><span class="n">fast</span><span class="p">,</span><span class="n">slow</span><span class="p">}]</span>
+                 <span class="p">[</span><span class="n">filename</span> <span class="p">[</span><span class="n">filename</span> <span class="o">...</span><span class="p">]]</span>
+<span class="n">search</span><span class="o">.</span><span class="n">py</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="n">the</span> <span class="n">following</span> <span class="n">arguments</span> <span class="n">are</span> <span class="n">required</span><span class="p">:</span> <span class="o">-</span><span class="n">p</span><span class="o">/--</span><span class="n">pat</span>
+
+<span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">v</span> <span class="o">-</span><span class="n">p</span> <span class="n">spam</span> <span class="o">--</span><span class="n">pat</span><span class="o">=</span><span class="n">eggs</span> <span class="n">foo</span><span class="o">.</span><span class="n">txt</span> <span class="n">bar</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo.txt'</span><span class="p">,</span> <span class="s1">'bar.txt'</span><span class="p">]</span>
+<span class="n">patterns</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">'spam'</span><span class="p">,</span> <span class="s1">'eggs'</span><span class="p">]</span>
+<span class="n">verbose</span>   <span class="o">=</span> <span class="bp">True</span>
+<span class="n">outfile</span>   <span class="o">=</span> <span class="bp">None</span>
+<span class="n">speed</span>     <span class="o">=</span> <span class="n">slow</span>
+
+<span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">v</span> <span class="o">-</span><span class="n">p</span> <span class="n">spam</span> <span class="o">--</span><span class="n">pat</span><span class="o">=</span><span class="n">eggs</span> <span class="n">foo</span><span class="o">.</span><span class="n">txt</span> <span class="n">bar</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">o</span> <span class="n">results</span>
+<span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo.txt'</span><span class="p">,</span> <span class="s1">'bar.txt'</span><span class="p">]</span>
+<span class="n">patterns</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">'spam'</span><span class="p">,</span> <span class="s1">'eggs'</span><span class="p">]</span>
+<span class="n">verbose</span>   <span class="o">=</span> <span class="bp">True</span>
+<span class="n">outfile</span>   <span class="o">=</span> <span class="n">results</span>
+<span class="n">speed</span>     <span class="o">=</span> <span class="n">slow</span>
+
+<span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="n">search</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">v</span> <span class="o">-</span><span class="n">p</span> <span class="n">spam</span> <span class="o">--</span><span class="n">pat</span><span class="o">=</span><span class="n">eggs</span> <span class="n">foo</span><span class="o">.</span><span class="n">txt</span> <span class="n">bar</span><span class="o">.</span><span class="n">txt</span> <span class="o">-</span><span class="n">o</span> <span class="n">results</span> \
+             <span class="o">--</span><span class="n">speed</span><span class="o">=</span><span class="n">fast</span>
+<span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo.txt'</span><span class="p">,</span> <span class="s1">'bar.txt'</span><span class="p">]</span>
+<span class="n">patterns</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">'spam'</span><span class="p">,</span> <span class="s1">'eggs'</span><span class="p">]</span>
+<span class="n">verbose</span>   <span class="o">=</span> <span class="bp">True</span>
+<span class="n">outfile</span>   <span class="o">=</span> <span class="n">results</span>
+<span class="n">speed</span>     <span class="o">=</span> <span class="n">fast</span>
+</pre></div>
+</div>
+<p>对于选项值的进一步处理由程序来决定，用你自己的逻辑来替代 <code class="docutils literal notranslate"><span class="pre">print()</span></code> 函数。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">argparse</span></code> 模块是标准库中最大的模块之一，拥有大量的配置选项。
+本节只是演示了其中最基础的一些特性，帮助你入门。</p>
+<p>为了解析命令行选项，你首先要创建一个 <code class="docutils literal notranslate"><span class="pre">ArgumentParser</span></code> 实例，
+并使用 <code class="docutils literal notranslate"><span class="pre">add_argument()</span></code> 方法声明你想要支持的选项。
+在每个 <code class="docutils literal notranslate"><span class="pre">add_argument()</span></code> 调用中，<code class="docutils literal notranslate"><span class="pre">dest</span></code> 参数指定解析结果被指派给属性的名字。
+<code class="docutils literal notranslate"><span class="pre">metavar</span></code> 参数被用来生成帮助信息。<code class="docutils literal notranslate"><span class="pre">action</span></code> 参数指定跟属性对应的处理逻辑，
+通常的值为 <code class="docutils literal notranslate"><span class="pre">store</span></code> ,被用来存储某个值或将多个参数值收集到一个列表中。
+下面的参数收集所有剩余的命令行参数到一个列表中。在本例中它被用来构造一个文件名列表：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s1">'filenames'</span><span class="p">,</span><span class="n">metavar</span><span class="o">=</span><span class="s1">'filename'</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'*'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面的参数根据参数是否存在来设置一个 <code class="docutils literal notranslate"><span class="pre">Boolean</span></code> 标志：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-v'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'verbose'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'verbose mode'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面的参数接受一个单独值并将其存储为一个字符串：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-o'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'outfile'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'output file'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面的参数说明允许某个参数重复出现多次，并将它们追加到一个列表中去。
+<code class="docutils literal notranslate"><span class="pre">required</span></code> 标志表示该参数至少要有一个。<code class="docutils literal notranslate"><span class="pre">-p</span></code> 和 <code class="docutils literal notranslate"><span class="pre">--pat</span></code> 表示两个参数名形式都可使用。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-p'</span><span class="p">,</span> <span class="s1">'--pat'</span><span class="p">,</span><span class="n">metavar</span><span class="o">=</span><span class="s1">'pattern'</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">dest</span><span class="o">=</span><span class="s1">'patterns'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'append'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'text pattern to search for'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>最后，下面的参数说明接受一个值，但是会将其和可能的选择值做比较，以检测其合法性：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--speed'</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">'speed'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+                    <span class="n">choices</span><span class="o">=</span><span class="p">{</span><span class="s1">'slow'</span><span class="p">,</span><span class="s1">'fast'</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="s1">'slow'</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">'search speed'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>一旦参数选项被指定，你就可以执行 <code class="docutils literal notranslate"><span class="pre">parser.parse()</span></code> 方法了。
+它会处理 <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> 的值并返回一个结果实例。
+每个参数值会被设置成该实例中 <code class="docutils literal notranslate"><span class="pre">add_argument()</span></code> 方法的 <code class="docutils literal notranslate"><span class="pre">dest</span></code> 参数指定的属性值。</p>
+<p>还很多种其他方法解析命令行选项。
+例如，你可能会手动的处理 <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> 或者使用 <code class="docutils literal notranslate"><span class="pre">getopt</span></code> 模块。
+但是，如果你采用本节的方式，将会减少很多冗余代码，底层细节 <code class="docutils literal notranslate"><span class="pre">argparse</span></code> 模块已经帮你处理了。
+你可能还会碰到使用 <code class="docutils literal notranslate"><span class="pre">optparse</span></code> 库解析选项的代码。
+尽管 <code class="docutils literal notranslate"><span class="pre">optparse</span></code> 和 <code class="docutils literal notranslate"><span class="pre">argparse</span></code> 很像，但是后者更先进，因此在新的程序中你应该使用它。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

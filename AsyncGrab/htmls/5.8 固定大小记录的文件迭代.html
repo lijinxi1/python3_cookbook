@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>5.8 固定大小记录的文件迭代 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>5.8 固定大小记录的文件迭代<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想在一个固定长度记录或者数据块的集合上迭代，而不是在一个文件中一行一行的迭代。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>通过下面这个小技巧使用 <code class="docutils literal notranslate"><span class="pre">iter</span></code> 和 <code class="docutils literal notranslate"><span class="pre">functools.partial()</span></code> 函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<span class="n">RECORD_SIZE</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'somefile.data'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">,</span> <span class="n">RECORD_SIZE</span><span class="p">),</span> <span class="sa">b</span><span class="s1">''</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>这个例子中的 <code class="docutils literal notranslate"><span class="pre">records</span></code> 对象是一个可迭代对象，它会不断的产生固定大小的数据块，直到文件末尾。
+要注意的是如果总记录大小不是块大小的整数倍的话，最后一个返回元素的字节数会比期望值少。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">iter()</span></code> 函数有一个鲜为人知的特性就是，如果你给它传递一个可调用对象和一个标记值，它会创建一个迭代器。
+这个迭代器会一直调用传入的可调用对象直到它返回标记值为止，这时候迭代终止。</p>
+<p>在例子中， <code class="docutils literal notranslate"><span class="pre">functools.partial</span></code> 用来创建一个每次被调用时从文件中读取固定数目字节的可调用对象。
+标记值 <code class="docutils literal notranslate"><span class="pre">b''</span></code> 就是当到达文件结尾时的返回值。</p>
+<p>最后再提一点，上面的例子中的文件时以二进制模式打开的。
+如果是读取固定大小的记录，这通常是最普遍的情况。
+而对于文本文件，一行一行的读取(默认的迭代行为)更普遍点。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

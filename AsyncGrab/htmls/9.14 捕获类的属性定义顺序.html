@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>9.14 捕获类的属性定义顺序 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>9.14 捕获类的属性定义顺序<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想自动记录一个类中属性和方法定义的顺序，
+然后可以利用它来做很多操作（比如序列化、映射到数据库等等）。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>利用元类可以很容易的捕获类的定义信息。下面是一个例子，使用了一个OrderedDict来记录描述器的定义顺序：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="c1"># A set of descriptors for various types</span>
+<span class="k">class</span> <span class="nc">Typed</span><span class="p">:</span>
+    <span class="n">_expected_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expected_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Expected '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_expected_type</span><span class="p">))</span>
+        <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+<span class="k">class</span> <span class="nc">Integer</span><span class="p">(</span><span class="n">Typed</span><span class="p">):</span>
+    <span class="n">_expected_type</span> <span class="o">=</span> <span class="nb">int</span>
+
+<span class="k">class</span> <span class="nc">Float</span><span class="p">(</span><span class="n">Typed</span><span class="p">):</span>
+    <span class="n">_expected_type</span> <span class="o">=</span> <span class="nb">float</span>
+
+<span class="k">class</span> <span class="nc">String</span><span class="p">(</span><span class="n">Typed</span><span class="p">):</span>
+    <span class="n">_expected_type</span> <span class="o">=</span> <span class="nb">str</span>
+
+<span class="c1"># Metaclass that uses an OrderedDict for class body</span>
+<span class="k">class</span> <span class="nc">OrderedMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">clsdict</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">clsdict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Typed</span><span class="p">):</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+                <span class="n">order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">'_order'</span><span class="p">]</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__prepare__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>在这个元类中，执行类主体时描述器的定义顺序会被一个 <code class="docutils literal notranslate"><span class="pre">OrderedDict``捕获到，</span>
+<span class="pre">生成的有序名称从字典中提取出来并放入类属性</span> <span class="pre">``_order</span></code> 中。这样的话类中的方法可以通过多种方式来使用它。
+例如，下面是一个简单的类，使用这个排序字典来实现将一个类实例的数据序列化为一行CSV数据：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Structure</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">OrderedMeta</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">as_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order</span><span class="p">)</span>
+
+<span class="c1"># Example use</span>
+<span class="k">class</span> <span class="nc">Stock</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">String</span><span class="p">()</span>
+    <span class="n">shares</span> <span class="o">=</span> <span class="n">Integer</span><span class="p">()</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">Float</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">shares</span><span class="p">,</span> <span class="n">price</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shares</span> <span class="o">=</span> <span class="n">shares</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">price</span> <span class="o">=</span> <span class="n">price</span>
+</pre></div>
+</div>
+<p>我们在交互式环境中测试一下这个Stock类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'GOOG'</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mf">490.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">name</span>
+<span class="go">'GOOG'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">as_csv</span><span class="p">()</span>
+<span class="go">'GOOG,100,490.1'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">'AAPL'</span><span class="p">,</span><span class="s1">'a lot'</span><span class="p">,</span> <span class="mf">610.23</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"dupmethod.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">34</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__init__</span>
+<span class="gr">TypeError</span>: <span class="n">shares expects &lt;class 'int'&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>本节一个关键点就是OrderedMeta元类中定义的 `` __prepare__()`` 方法。
+这个方法会在开始定义类和它的父类的时候被执行。它必须返回一个映射对象以便在类定义体中被使用到。
+我们这里通过返回了一个OrderedDict而不是一个普通的字典，可以很容易的捕获定义的顺序。</p>
+<p>如果你想构造自己的类字典对象，可以很容易的扩展这个功能。比如，下面的这个修改方案可以防止重复的定义：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="k">class</span> <span class="nc">NoDupOrderedDict</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clsname</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clsname</span> <span class="o">=</span> <span class="n">clsname</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'{} already defined in {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clsname</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">OrderedMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">clsdict</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">clsdict</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">'_order'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">clsdict</span> <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">'_'</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__prepare__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">clsname</span><span class="p">,</span> <span class="n">bases</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">NoDupOrderedDict</span><span class="p">(</span><span class="n">clsname</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面我们测试重复的定义会出现什么情况：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">OrderedMeta</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">pass</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">pass</span>
+<span class="gp">...</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">4</span><span class="p">,</span> <span class="ow">in</span> <span class="n">A</span>
+    <span class="n">File</span> <span class="s2">"dupmethod2.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">25</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__setitem__</span>
+        <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clsname</span><span class="p">))</span>
+<span class="gr">TypeError</span>: <span class="n">spam already defined in A</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后还有一点很重要，就是在 <code class="docutils literal notranslate"><span class="pre">__new__()</span></code> 方法中对于元类中被修改字典的处理。
+尽管类使用了另外一个字典来定义，在构造最终的 <code class="docutils literal notranslate"><span class="pre">class</span></code> 对象的时候，
+我们仍然需要将这个字典转换为一个正确的 <code class="docutils literal notranslate"><span class="pre">dict</span></code> 实例。
+通过语句 <code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">dict(clsdict)</span></code> 来完成这个效果。</p>
+<p>对于很多应用程序而已，能够捕获类定义的顺序是一个看似不起眼却又非常重要的特性。
+例如，在对象关系映射中，我们通常会看到下面这种方式定义的类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Stock</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">String</span><span class="p">()</span>
+    <span class="n">shares</span> <span class="o">=</span> <span class="n">Integer</span><span class="p">()</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">Float</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>在框架底层，我们必须捕获定义的顺序来将对象映射到元组或数据库表中的行（就类似于上面例子中的 <code class="docutils literal notranslate"><span class="pre">as_csv()</span></code> 的功能）。
+这节演示的技术非常简单，并且通常会比其他类似方法（通常都要在描述器类中维护一个隐藏的计数器）要简单的多。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

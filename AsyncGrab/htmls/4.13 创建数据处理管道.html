@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>4.13 创建数据处理管道 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>4.13 创建数据处理管道<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想以数据管道(类似Unix管道)的方式迭代处理数据。
+比如，你有个大量的数据需要处理，但是不能将它们一次性放入内存中。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>生成器函数是一个实现管道机制的好办法。
+为了演示，假定你要处理一个非常大的日志文件目录：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">foo</span><span class="o">/</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mf">012007.</span><span class="n">gz</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mf">022007.</span><span class="n">gz</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mf">032007.</span><span class="n">gz</span>
+    <span class="o">...</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mo">01200</span><span class="mi">8</span>
+<span class="n">bar</span><span class="o">/</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mf">092007.</span><span class="n">bz2</span>
+    <span class="o">...</span>
+    <span class="n">access</span><span class="o">-</span><span class="n">log</span><span class="o">-</span><span class="mo">02200</span><span class="mi">8</span>
+</pre></div>
+</div>
+<p>假设每个日志文件包含这样的数据：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="mf">124.115</span><span class="o">.</span><span class="mf">6.12</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">50</span> <span class="o">-</span><span class="mo">0500</span><span class="p">]</span> <span class="s2">"GET /robots.txt ..."</span> <span class="mi">200</span> <span class="mi">71</span>
+<span class="mf">210.212</span><span class="o">.</span><span class="mf">209.67</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">51</span> <span class="o">-</span><span class="mo">0500</span><span class="p">]</span> <span class="s2">"GET /ply/ ..."</span> <span class="mi">200</span> <span class="mi">11875</span>
+<span class="mf">210.212</span><span class="o">.</span><span class="mf">209.67</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">51</span> <span class="o">-</span><span class="mo">0500</span><span class="p">]</span> <span class="s2">"GET /favicon.ico ..."</span> <span class="mi">404</span> <span class="mi">369</span>
+<span class="mf">61.135</span><span class="o">.</span><span class="mf">216.105</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mi">20</span><span class="p">:</span><span class="mo">04</span> <span class="o">-</span><span class="mo">0500</span><span class="p">]</span> <span class="s2">"GET /blog/atom.xml ..."</span> <span class="mi">304</span> <span class="o">-</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>为了处理这些文件，你可以定义一个由多个执行特定任务独立任务的简单生成器函数组成的容器。就像这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">bz2</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">def</span> <span class="nf">gen_find</span><span class="p">(</span><span class="n">filepat</span><span class="p">,</span> <span class="n">top</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Find all filenames in a directory tree that match a shell wildcard pattern</span>
+<span class="sd">    '''</span>
+    <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">dirlist</span><span class="p">,</span> <span class="n">filelist</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">top</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">filepat</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">gen_opener</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Open a sequence of filenames one at a time producing a file object.</span>
+<span class="sd">    The file is closed immediately when proceeding to the next iteration.</span>
+<span class="sd">    '''</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.gz'</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rt'</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.bz2'</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">bz2</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rt'</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rt'</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">f</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">gen_concatenate</span><span class="p">(</span><span class="n">iterators</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Chain a sequence of iterators together into a single sequence.</span>
+<span class="sd">    '''</span>
+    <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">iterators</span><span class="p">:</span>
+        <span class="k">yield from</span> <span class="n">it</span>
+
+<span class="k">def</span> <span class="nf">gen_grep</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Look for a regex pattern in a sequence of lines</span>
+<span class="sd">    '''</span>
+    <span class="n">pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pat</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">line</span>
+</pre></div>
+</div>
+<p>现在你可以很容易的将这些函数连起来创建一个处理管道。
+比如，为了查找包含单词python的所有日志行，你可以这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lognames</span> <span class="o">=</span> <span class="n">gen_find</span><span class="p">(</span><span class="s1">'access-log*'</span><span class="p">,</span> <span class="s1">'www'</span><span class="p">)</span>
+<span class="n">files</span> <span class="o">=</span> <span class="n">gen_opener</span><span class="p">(</span><span class="n">lognames</span><span class="p">)</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">gen_concatenate</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+<span class="n">pylines</span> <span class="o">=</span> <span class="n">gen_grep</span><span class="p">(</span><span class="s1">'(?i)python'</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">pylines</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>如果将来的时候你想扩展管道，你甚至可以在生成器表达式中包装数据。
+比如，下面这个版本计算出传输的字节数并计算其总和。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lognames</span> <span class="o">=</span> <span class="n">gen_find</span><span class="p">(</span><span class="s1">'access-log*'</span><span class="p">,</span> <span class="s1">'www'</span><span class="p">)</span>
+<span class="n">files</span> <span class="o">=</span> <span class="n">gen_opener</span><span class="p">(</span><span class="n">lognames</span><span class="p">)</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">gen_concatenate</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+<span class="n">pylines</span> <span class="o">=</span> <span class="n">gen_grep</span><span class="p">(</span><span class="s1">'(?i)python'</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+<span class="n">bytecolumn</span> <span class="o">=</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span><span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">pylines</span><span class="p">)</span>
+<span class="nb">bytes</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bytecolumn</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">'-'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Total'</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">bytes</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>以管道方式处理数据可以用来解决各类其他问题，包括解析，读取实时数据，定时轮询等。</p>
+<p>为了理解上述代码，重点是要明白 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句作为数据的生产者而 <code class="docutils literal notranslate"><span class="pre">for</span></code> 循环语句作为数据的消费者。
+当这些生成器被连在一起后，每个 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 会将一个单独的数据元素传递给迭代处理管道的下一阶段。
+在例子最后部分， <code class="docutils literal notranslate"><span class="pre">sum()</span></code> 函数是最终的程序驱动者，每次从生成器管道中提取出一个元素。</p>
+<p>这种方式一个非常好的特点是每个生成器函数很小并且都是独立的。这样的话就很容易编写和维护它们了。
+很多时候，这些函数如果比较通用的话可以在其他场景重复使用。
+并且最终将这些组件组合起来的代码看上去非常简单，也很容易理解。</p>
+<p>使用这种方式的内存效率也不得不提。上述代码即便是在一个超大型文件目录中也能工作的很好。
+事实上，由于使用了迭代方式处理，代码运行过程中只需要很小很小的内存。</p>
+<p>在调用 <code class="docutils literal notranslate"><span class="pre">gen_concatenate()</span></code> 函数的时候你可能会有些不太明白。
+这个函数的目的是将输入序列拼接成一个很长的行序列。
+<code class="docutils literal notranslate"><span class="pre">itertools.chain()</span></code> 函数同样有类似的功能，但是它需要将所有可迭代对象最为参数传入。
+在上面这个例子中，你可能会写类似这样的语句 <code class="docutils literal notranslate"><span class="pre">lines</span> <span class="pre">=</span> <span class="pre">itertools.chain(*files)</span></code> ，
+这将导致 <code class="docutils literal notranslate"><span class="pre">gen_opener()</span></code> 生成器被提前全部消费掉。
+但由于 <code class="docutils literal notranslate"><span class="pre">gen_opener()</span></code> 生成器每次生成一个打开过的文件，
+等到下一个迭代步骤时文件就关闭了，因此 <code class="docutils literal notranslate"><span class="pre">chain()</span></code> 在这里不能这样使用。
+上面的方案可以避免这种情况。</p>
+<p><code class="docutils literal notranslate"><span class="pre">gen_concatenate()</span></code> 函数中出现过 <code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span></code> 语句，它将 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 操作代理到父生成器上去。
+语句 <code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span> <span class="pre">it</span></code> 简单的返回生成器 <code class="docutils literal notranslate"><span class="pre">it</span></code> 所产生的所有值。
+关于这个我们在4.14小节会有更进一步的描述。</p>
+<p>最后还有一点需要注意的是，管道方式并不是万能的。
+有时候你想立即处理所有数据。
+然而，即便是这种情况，使用生成器管道也可以将这类问题从逻辑上变为工作流的处理方式。</p>
+<p><em>David Beazley</em> 在他的
+<a class="reference external" href="http://www.dabeaz.com/generators/">Generator Tricks for Systems Programmers</a>
+教程中对于这种技术有非常深入的讲解。可以参考这个教程获取更多的信息。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

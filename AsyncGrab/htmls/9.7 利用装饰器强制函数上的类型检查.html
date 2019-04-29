@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>9.7 利用装饰器强制函数上的类型检查 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>9.7 利用装饰器强制函数上的类型检查<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>作为某种编程规约，你想在对函数参数进行强制类型检查。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>在演示实际代码前，先说明我们的目标：能对函数参数类型进行断言，类似下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@typeassert</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'hello'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"contract.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">33</span><span class="p">,</span> <span class="ow">in</span> <span class="n">wrapper</span>
+<span class="gr">TypeError</span>: <span class="n">Argument y must be &lt;class 'int'&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>下面是使用装饰器技术来实现 <code class="docutils literal notranslate"><span class="pre">@typeassert</span></code> ：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="k">def</span> <span class="nf">typeassert</span><span class="p">(</span><span class="o">*</span><span class="n">ty_args</span><span class="p">,</span> <span class="o">**</span><span class="n">ty_kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="c1"># If in optimized mode, disable type checking</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">__debug__</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span>
+
+        <span class="c1"># Map function argument names to supplied types</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">bound_types</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind_partial</span><span class="p">(</span><span class="o">*</span><span class="n">ty_args</span><span class="p">,</span> <span class="o">**</span><span class="n">ty_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">bound_values</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c1"># Enforce type assertions across supplied arguments</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">bound_values</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">bound_types</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">bound_types</span><span class="p">[</span><span class="n">name</span><span class="p">]):</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                            <span class="s1">'Argument {} must be {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bound_types</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorate</span>
+</pre></div>
+</div>
+<p>可以看出这个装饰器非常灵活，既可以指定所有参数类型，也可以只指定部分。
+并且可以通过位置或关键字来指定参数类型。下面是使用示例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; @typeassert(int, z=int)
+... def spam(x, y, z=42):
+...     print(x, y, z)
+...
+&gt;&gt;&gt; spam(1, 2, 3)
+1 2 3
+&gt;&gt;&gt; spam(1, 'hello', 3)
+1 hello 3
+&gt;&gt;&gt; spam(1, 'hello', 'world')
+Traceback (most recent call last):
+File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+File "contract.py", line 33, in wrapper
+TypeError: Argument z must be &lt;class 'int'&gt;
+&gt;&gt;&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>这节是高级装饰器示例，引入了很多重要的概念。</p>
+<p>首先，装饰器只会在函数定义时被调用一次。
+有时候你去掉装饰器的功能，那么你只需要简单的返回被装饰函数即可。
+下面的代码中，如果全局变量　<code class="docutils literal notranslate"><span class="pre">__debug__</span></code> 被设置成了False(当你使用-O或-OO参数的优化模式执行程序时)，
+那么就直接返回未修改过的函数本身：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="c1"># If in optimized mode, disable type checking</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">__debug__</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">func</span>
+</pre></div>
+</div>
+<p>其次，这里还对被包装函数的参数签名进行了检查，我们使用了 <code class="docutils literal notranslate"><span class="pre">inspect.signature()</span></code> 函数。
+简单来讲，它运行你提取一个可调用对象的参数签名信息。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">spam</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="go">(x, y, z=42)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span>
+<span class="go">mappingproxy(OrderedDict([('x', &lt;Parameter at 0x10077a050 'x'&gt;),</span>
+<span class="go">('y', &lt;Parameter at 0x10077a158 'y'&gt;), ('z', &lt;Parameter at 0x10077a1b0 'z'&gt;)]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+<span class="go">'z'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span><span class="o">.</span><span class="n">kind</span>
+<span class="go">&lt;_ParameterKind: 'POSITIONAL_OR_KEYWORD'&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>装饰器的开始部分，我们使用了 <code class="docutils literal notranslate"><span class="pre">bind_partial()</span></code> 方法来执行从指定类型到名称的部分绑定。
+下面是例子演示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bound_types</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind_partial</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="n">z</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bound_types</span>
+<span class="go">&lt;inspect.BoundArguments object at 0x10069bb50&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bound_types</span><span class="o">.</span><span class="n">arguments</span>
+<span class="go">OrderedDict([('x', &lt;class 'int'&gt;), ('z', &lt;class 'int'&gt;)])</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>在这个部分绑定中，你可以注意到缺失的参数被忽略了(比如并没有对y进行绑定)。
+不过最重要的是创建了一个有序字典 <code class="docutils literal notranslate"><span class="pre">bound_types.arguments</span></code> 。
+这个字典会将参数名以函数签名中相同顺序映射到指定的类型值上面去。
+在我们的装饰器例子中，这个映射包含了我们要强制指定的类型断言。</p>
+<p>在装饰器创建的实际包装函数中使用到了 <code class="docutils literal notranslate"><span class="pre">sig.bind()</span></code> 方法。
+<code class="docutils literal notranslate"><span class="pre">bind()</span></code> 跟 <code class="docutils literal notranslate"><span class="pre">bind_partial()</span></code> 类似，但是它不允许忽略任何参数。因此有了下面的结果：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bound_values</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bound_values</span><span class="o">.</span><span class="n">arguments</span>
+<span class="go">OrderedDict([('x', 1), ('y', 2), ('z', 3)])</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>使用这个映射我们可以很轻松的实现我们的强制类型检查：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">bound_values</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">bound_types</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">bound_types</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="n">name</span><span class="p">]):</span>
+<span class="gp">... </span>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>不过这个方案还有点小瑕疵，它对于有默认值的参数并不适用。
+比如下面的代码可以正常工作，尽管items的类型是错误的：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@typeassert</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">items</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">items</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bar</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[2]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bar</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="n">File</span> <span class="s2">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">File</span> <span class="s2">"contract.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">33</span><span class="p">,</span> <span class="ow">in</span> <span class="n">wrapper</span>
+<span class="gr">TypeError</span>: <span class="n">Argument items must be &lt;class 'list'&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bar</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="go">[1, 2, 3, 4]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后一点是关于适用装饰器参数和函数注解之间的争论。
+例如，为什么不像下面这样写一个装饰器来查找函数中的注解呢？</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@typeassert</span>
+<span class="k">def</span> <span class="nf">spam</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>一个可能的原因是如果使用了函数参数注解，那么就被限制了。
+如果注解被用来做类型检查就不能做其他事情了。而且 <code class="docutils literal notranslate"><span class="pre">@typeassert</span></code> 不能再用于使用注解做其他事情的函数了。
+而使用上面的装饰器参数灵活性大多了，也更加通用。</p>
+<p>可以在PEP 362以及 <code class="docutils literal notranslate"><span class="pre">inspect</span></code> 模块中找到更多关于函数参数对象的信息。在9.16小节还有另外一个例子。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

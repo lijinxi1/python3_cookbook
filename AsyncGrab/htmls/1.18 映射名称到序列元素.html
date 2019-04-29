@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>1.18 映射名称到序列元素 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>1.18 映射名称到序列元素<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你有一段通过下标访问列表或者元组中元素的代码，但是这样有时候会使得你的代码难以阅读，
+于是你想通过名称来访问元素。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">collections.namedtuple()</span></code> 函数通过使用一个普通的元组对象来帮你解决这个问题。
+这个函数实际上是一个返回 Python 中标准元组类型子类的一个工厂方法。
+你需要传递一个类型名和你需要的字段给它，然后它就会返回一个类，你可以初始化这个类，为你定义的字段传递值等。
+代码示例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Subscriber</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">'Subscriber'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'addr'</span><span class="p">,</span> <span class="s1">'joined'</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sub</span> <span class="o">=</span> <span class="n">Subscriber</span><span class="p">(</span><span class="s1">'jonesy@example.com'</span><span class="p">,</span> <span class="s1">'2012-10-19'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sub</span>
+<span class="go">Subscriber(addr='jonesy@example.com', joined='2012-10-19')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sub</span><span class="o">.</span><span class="n">addr</span>
+<span class="go">'jonesy@example.com'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sub</span><span class="o">.</span><span class="n">joined</span>
+<span class="go">'2012-10-19'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>尽管 <code class="docutils literal notranslate"><span class="pre">namedtuple</span></code> 的实例看起来像一个普通的类实例，但是它跟元组类型是可交换的，支持所有的普通元组操作，比如索引和解压。
+比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">addr</span><span class="p">,</span> <span class="n">joined</span> <span class="o">=</span> <span class="n">sub</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">addr</span>
+<span class="go">'jonesy@example.com'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">joined</span>
+<span class="go">'2012-10-19'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>命名元组的一个主要用途是将你的代码从下标操作中解脱出来。
+因此，如果你从数据库调用中返回了一个很大的元组列表，通过下标去操作其中的元素，
+当你在表中添加了新的列的时候你的代码可能就会出错了。但是如果你使用了命名元组，那么就不会有这样的顾虑。</p>
+<p>为了说明清楚，下面是使用普通元组的代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_cost</span><span class="p">(</span><span class="n">records</span><span class="p">):</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">rec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">total</span>
+</pre></div>
+</div>
+<p>下标操作通常会让代码表意不清晰，并且非常依赖记录的结构。
+下面是使用命名元组的版本：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="n">Stock</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">'Stock'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">compute_cost</span><span class="p">(</span><span class="n">records</span><span class="p">):</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="o">*</span><span class="n">rec</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">s</span><span class="o">.</span><span class="n">shares</span> <span class="o">*</span> <span class="n">s</span><span class="o">.</span><span class="n">price</span>
+    <span class="k">return</span> <span class="n">total</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>命名元组另一个用途就是作为字典的替代，因为字典存储需要更多的内存空间。
+如果你需要构建一个非常大的包含字典的数据结构，那么使用命名元组会更加高效。
+但是需要注意的是，不像字典那样，一个命名元组是不可更改的。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; s = Stock('ACME', 100, 123.45)
+&gt;&gt;&gt; s
+Stock(name='ACME', shares=100, price=123.45)
+&gt;&gt;&gt; s.shares = 75
+Traceback (most recent call last):
+File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+AttributeError: can't set attribute
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>如果你真的需要改变属性的值，那么可以使用命名元组实例的 <code class="docutils literal notranslate"><span class="pre">_replace()</span></code> 方法，
+它会创建一个全新的命名元组并将对应的字段用新的值取代。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">shares</span><span class="o">=</span><span class="mi">75</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">Stock(name='ACME', shares=75, price=123.45)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">_replace()</span></code> 方法还有一个很有用的特性就是当你的命名元组拥有可选或者缺失字段时候，
+它是一个非常方便的填充数据的方法。
+你可以先创建一个包含缺省值的原型元组，然后使用 <code class="docutils literal notranslate"><span class="pre">_replace()</span></code> 方法创建新的值被更新过的实例。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="n">Stock</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">'Stock'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">,</span> <span class="s1">'date'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">])</span>
+
+<span class="c1"># Create a prototype instance</span>
+<span class="n">stock_prototype</span> <span class="o">=</span> <span class="n">Stock</span><span class="p">(</span><span class="s1">''</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="c1"># Function to convert a dictionary to a Stock</span>
+<span class="k">def</span> <span class="nf">dict_to_stock</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_prototype</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="o">**</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>下面是它的使用方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">:</span> <span class="s1">'ACME'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">:</span> <span class="mf">123.45</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_to_stock</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Stock(name='ACME', shares=100, price=123.45, date=None, time=None)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">:</span> <span class="s1">'ACME'</span><span class="p">,</span> <span class="s1">'shares'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">'price'</span><span class="p">:</span> <span class="mf">123.45</span><span class="p">,</span> <span class="s1">'date'</span><span class="p">:</span> <span class="s1">'12/17/2012'</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_to_stock</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">Stock(name='ACME', shares=100, price=123.45, date='12/17/2012', time=None)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后要说的是，如果你的目标是定义一个需要更新很多实例属性的高效数据结构，那么命名元组并不是你的最佳选择。
+这时候你应该考虑定义一个包含 <code class="docutils literal notranslate"><span class="pre">__slots__</span></code> 方法的类（参考8.4小节）。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

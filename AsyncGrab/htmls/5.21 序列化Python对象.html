@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>5.21 序列化Python对象 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p06_data_encoding_and_process.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p06_data_encoding_and_process.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="python">
+<h1>5.21 序列化Python对象<a class="headerlink" href="#python" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你需要将一个Python对象序列化为一个字节流，以便将它保存到一个文件、存储到数据库或者通过网络传输它。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>对于序列化最普遍的做法就是使用 <code class="docutils literal notranslate"><span class="pre">pickle</span></code> 模块。为了将一个对象保存到一个文件中，可以这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># Some Python object</span>
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'somefile'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span>
+<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>为了将一个对象转储为一个字符串，可以使用 <code class="docutils literal notranslate"><span class="pre">pickle.dumps()</span></code> ：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>为了从字节流中恢复一个对象，使用 <code class="docutils literal notranslate"><span class="pre">pickle.load()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">pickle.loads()</span></code> 函数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Restore from a file</span>
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'somefile'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># Restore from a string</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>对于大多数应用程序来讲，<code class="docutils literal notranslate"><span class="pre">dump()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">load()</span></code> 函数的使用就是你有效使用 <code class="docutils literal notranslate"><span class="pre">pickle</span></code> 模块所需的全部了。
+它可适用于绝大部分Python数据类型和用户自定义类的对象实例。
+如果你碰到某个库可以让你在数据库中保存/恢复Python对象或者是通过网络传输对象的话，
+那么很有可能这个库的底层就使用了 <code class="docutils literal notranslate"><span class="pre">pickle</span></code> 模块。</p>
+<p><code class="docutils literal notranslate"><span class="pre">pickle</span></code> 是一种Python特有的自描述的数据编码。
+通过自描述，被序列化后的数据包含每个对象开始和结束以及它的类型信息。
+因此，你无需担心对象记录的定义，它总是能工作。
+举个例子，如果要处理多个对象，你可以这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'somedata'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s1">'Apple'</span><span class="p">,</span> <span class="s1">'Pear'</span><span class="p">,</span> <span class="s1">'Banana'</span><span class="p">},</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'somedata'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">[1, 2, 3, 4]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">'hello'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">{'Apple', 'Pear', 'Banana'}</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>你还能序列化函数，类，还有接口，但是结果数据仅仅将它们的名称编码成对应的代码对象。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pickle.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">)</span>
+<span class="go">b'\x80\x03cmath\ncos\nq\x00.'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>当数据反序列化回来的时候，会先假定所有的源数据时可用的。
+模块、类和函数会自动按需导入进来。对于Python数据被不同机器上的解析器所共享的应用程序而言，
+数据的保存可能会有问题，因为所有的机器都必须访问同一个源代码。</p>
+<p>注</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>千万不要对不信任的数据使用pickle.load()。
+pickle在加载时有一个副作用就是它会自动加载相应模块并构造实例对象。
+但是某个坏人如果知道pickle的工作原理，
+他就可以创建一个恶意的数据导致Python执行随意指定的系统命令。
+因此，一定要保证pickle只在相互之间可以认证对方的解析器的内部使用。
+</pre></div>
+</div>
+<p>有些类型的对象是不能被序列化的。这些通常是那些依赖外部系统状态的对象，
+比如打开的文件，网络连接，线程，进程，栈帧等等。
+用户自定义类可以通过提供 <code class="docutils literal notranslate"><span class="pre">__getstate__()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">__setstate__()</span></code> 方法来绕过这些限制。
+如果定义了这两个方法，<code class="docutils literal notranslate"><span class="pre">pickle.dump()</span></code> 就会调用 <code class="docutils literal notranslate"><span class="pre">__getstate__()</span></code> 获取序列化的对象。
+类似的，<code class="docutils literal notranslate"><span class="pre">__setstate__()</span></code> 在反序列化时被调用。为了演示这个工作原理，
+下面是一个在内部定义了一个线程但仍然可以序列化和反序列化的类：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># countdown.py</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="k">class</span> <span class="nc">Countdown</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">'T-minus'</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>试着运行下面的序列化试验代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">countdown</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">countdown</span><span class="o">.</span><span class="n">Countdown</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span><span class="o">-</span><span class="n">minus</span> <span class="mi">30</span>
+<span class="go">T-minus 29</span>
+<span class="go">T-minus 28</span>
+<span class="gp">...</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># After a few moments</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'cstate.p'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>然后退出Python解析器并重启后再试验下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'cstate.p'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">countdown.Countdown object at 0x10069e2d0&gt;</span>
+<span class="go">T-minus 19</span>
+<span class="go">T-minus 18</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>你可以看到线程又奇迹般的重生了，从你第一次序列化它的地方又恢复过来。</p>
+<p><code class="docutils literal notranslate"><span class="pre">pickle</span></code> 对于大型的数据结构比如使用 <code class="docutils literal notranslate"><span class="pre">array</span></code> 或 <code class="docutils literal notranslate"><span class="pre">numpy</span></code>
+模块创建的二进制数组效率并不是一个高效的编码方式。
+如果你需要移动大量的数组数据，你最好是先在一个文件中将其保存为数组数据块或使用更高级的标准编码方式如HDF5
+(需要第三方库的支持)。</p>
+<p>由于 <code class="docutils literal notranslate"><span class="pre">pickle</span></code> 是Python特有的并且附着在源码上，所有如果需要长期存储数据的时候不应该选用它。
+例如，如果源码变动了，你所有的存储数据可能会被破坏并且变得不可读取。
+坦白来讲，对于在数据库和存档文件中存储数据时，你最好使用更加标准的数据编码格式如XML，CSV或JSON。
+这些编码格式更标准，可以被不同的语言支持，并且也能很好的适应源码变更。</p>
+<p>最后一点要注意的是  <code class="docutils literal notranslate"><span class="pre">pickle</span></code> 有大量的配置选项和一些棘手的问题。
+对于最常见的使用场景，你不需要去担心这个，但是如果你要在一个重要的程序中使用pickle去做序列化的话，
+最好去查阅一下 <a class="reference external" href="https://docs.python.org/3/library/pickle.html">官方文档</a> 。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

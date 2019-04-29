@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>14.11 输出警告信息 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>14.11 输出警告信息<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你希望自己的程序能生成警告信息（比如废弃特性或使用问题）。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>要输出一个警告消息，可使用 <code class="docutils literal notranslate"><span class="pre">warning.warn()</span></code> 函数。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">logfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">'logfile argument deprecated'</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">warn()</span></code> 的参数是一个警告消息和一个警告类，警告类有如下几种：UserWarning,  DeprecationWarning,
+SyntaxWarning, RuntimeWarning, ResourceWarning, 或 FutureWarning.</p>
+<p>对警告的处理取决于你如何运行解释器以及一些其他配置。
+例如，如果你使用 <code class="docutils literal notranslate"><span class="pre">-W</span> <span class="pre">all</span></code> 选项去运行Python，你会得到如下的输出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="o">-</span><span class="n">W</span> <span class="nb">all</span> <span class="n">example</span><span class="o">.</span><span class="n">py</span>
+<span class="n">example</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span> <span class="ne">DeprecationWarning</span><span class="p">:</span> <span class="n">logfile</span> <span class="n">argument</span> <span class="ow">is</span> <span class="n">deprecated</span>
+  <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">'logfile argument is deprecated'</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>通常来讲，警告会输出到标准错误上。如果你想讲警告转换为异常，可以使用 <code class="docutils literal notranslate"><span class="pre">-W</span> <span class="pre">error</span></code> 选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="o">-</span><span class="n">W</span> <span class="n">error</span> <span class="n">example</span><span class="o">.</span><span class="n">py</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">10</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">func</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="s1">'log.txt'</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">5</span><span class="p">,</span> <span class="ow">in</span> <span class="n">func</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">'logfile argument is deprecated'</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+<span class="ne">DeprecationWarning</span><span class="p">:</span> <span class="n">logfile</span> <span class="n">argument</span> <span class="ow">is</span> <span class="n">deprecated</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>在你维护软件，提示用户某些信息，但是又不需要将其上升为异常级别，那么输出警告信息就会很有用了。
+例如，假设你准备修改某个函数库或框架的功能，你可以先为你要更改的部分输出警告信息，同时向后兼容一段时间。
+你还可以警告用户一些对代码有问题的使用方式。</p>
+<p>作为另外一个内置函数库的警告使用例子，下面演示了一个没有关闭文件就销毁它时产生的警告消息：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">'always'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'/etc/passwd'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">f</span>
+<span class="go">__main__:1: ResourceWarning: unclosed file &lt;_io.TextIOWrapper name='/etc/passwd'</span>
+<span class="go"> mode='r' encoding='UTF-8'&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>默认情况下，并不是所有警告消息都会出现。<code class="docutils literal notranslate"><span class="pre">-W</span></code> 选项能控制警告消息的输出。
+<code class="docutils literal notranslate"><span class="pre">-W</span> <span class="pre">all</span></code> 会输出所有警告消息，<code class="docutils literal notranslate"><span class="pre">-W</span> <span class="pre">ignore</span></code> 忽略掉所有警告，<code class="docutils literal notranslate"><span class="pre">-W</span> <span class="pre">error</span></code> 将警告转换成异常。
+另外一种选择，你还可以使用 <code class="docutils literal notranslate"><span class="pre">warnings.simplefilter()</span></code> 函数控制输出。
+<code class="docutils literal notranslate"><span class="pre">always</span></code> 参数会让所有警告消息出现，<code class="docutils literal notranslate"><span class="pre">`ignore</span></code> 忽略调所有的警告，<code class="docutils literal notranslate"><span class="pre">error</span></code> 将警告转换成异常。</p>
+<p>对于简单的生成警告消息的情况这些已经足够了。
+<code class="docutils literal notranslate"><span class="pre">warnings</span></code> 模块对过滤和警告消息处理提供了大量的更高级的配置选项。
+更多信息请参考 <a class="reference external" href="https://docs.python.org/3/library/warnings.html">Python文档</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

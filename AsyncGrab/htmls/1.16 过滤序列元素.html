@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>1.16 过滤序列元素 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>1.16 过滤序列元素<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你有一个数据序列，想利用一些规则从中提取出需要的值或者是缩短序列</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>最简单的过滤序列元素的方法就是使用列表推导。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mylist</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">[1, 4, 10, 2, 3]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">[-5, -7, -1]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>使用列表推导的一个潜在缺陷就是如果输入非常大的时候会产生一个非常大的结果集，占用大量内存。
+如果你对内存比较敏感，那么你可以使用生成器表达式迭代产生过滤的元素。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pos</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pos</span>
+<span class="go">&lt;generator object &lt;genexpr&gt; at 0x1006a0eb0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">1</span>
+<span class="go">4</span>
+<span class="go">10</span>
+<span class="go">2</span>
+<span class="go">3</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>有时候，过滤规则比较复杂，不能简单的在列表推导或者生成器表达式中表达出来。
+比如，假设过滤的时候需要处理一些异常或者其他复杂情况。这时候你可以将过滤代码放到一个函数中，
+然后使用内建的 <code class="docutils literal notranslate"><span class="pre">filter()</span></code> 函数。示例如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'1'</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="s1">'-3'</span><span class="p">,</span> <span class="s1">'-'</span><span class="p">,</span> <span class="s1">'4'</span><span class="p">,</span> <span class="s1">'N/A'</span><span class="p">,</span> <span class="s1">'5'</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">is_int</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+<span class="n">ivals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">is_int</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">ivals</span><span class="p">)</span>
+<span class="c1"># Outputs ['1', '2', '-3', '4', '5']</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">filter()</span></code> 函数创建了一个迭代器，因此如果你想得到一个列表的话，就得像示例那样使用 <code class="docutils literal notranslate"><span class="pre">list()</span></code> 去转换。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>列表推导和生成器表达式通常情况下是过滤数据最简单的方式。
+其实它们还能在过滤的时候转换数据。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mylist</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">[1.0, 2.0, 3.1622776601683795, 1.4142135623730951, 1.7320508075688772]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>过滤操作的一个变种就是将不符合条件的值用新的值代替，而不是丢弃它们。
+比如，在一列数据中你可能不仅想找到正数，而且还想将不是正数的数替换成指定的数。
+通过将过滤条件放到条件表达式中去，可以很容易的解决这个问题，就像这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">clip_neg</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clip_neg</span>
+<span class="go">[1, 4, 0, 10, 0, 2, 3, 0]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clip_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mylist</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clip_pos</span>
+<span class="go">[0, 0, -5, 0, -7, 0, 0, -1]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>另外一个值得关注的过滤工具就是 <code class="docutils literal notranslate"><span class="pre">itertools.compress()</span></code> ，
+它以一个 <code class="docutils literal notranslate"><span class="pre">iterable</span></code> 对象和一个相对应的 <code class="docutils literal notranslate"><span class="pre">Boolean</span></code> 选择器序列作为输入参数。
+然后输出 <code class="docutils literal notranslate"><span class="pre">iterable</span></code> 对象中对应选择器为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 的元素。
+当你需要用另外一个相关联的序列来过滤某个序列的时候，这个函数是非常有用的。
+比如，假如现在你有下面两列数据：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">addresses</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'5412 N CLARK'</span><span class="p">,</span>
+    <span class="s1">'5148 N CLARK'</span><span class="p">,</span>
+    <span class="s1">'5800 E 58TH'</span><span class="p">,</span>
+    <span class="s1">'2122 N CLARK'</span><span class="p">,</span>
+    <span class="s1">'5645 N RAVENSWOOD'</span><span class="p">,</span>
+    <span class="s1">'1060 W ADDISON'</span><span class="p">,</span>
+    <span class="s1">'4801 N BROADWAY'</span><span class="p">,</span>
+    <span class="s1">'1039 W GRANVILLE'</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">counts</span> <span class="o">=</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>现在你想将那些对应 <code class="docutils literal notranslate"><span class="pre">count</span></code> 值大于5的地址全部输出，那么你可以这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">compress</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">more5</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">more5</span>
+<span class="go">[False, False, True, False, False, True, True, False]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">compress</span><span class="p">(</span><span class="n">addresses</span><span class="p">,</span> <span class="n">more5</span><span class="p">))</span>
+<span class="go">['5800 E 58TH', '1060 W ADDISON', '4801 N BROADWAY']</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>这里的关键点在于先创建一个 <code class="docutils literal notranslate"><span class="pre">Boolean</span></code> 序列，指示哪些元素符合条件。
+然后 <code class="docutils literal notranslate"><span class="pre">compress()</span></code> 函数根据这个序列去选择输出对应位置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 的元素。</p>
+<p>和 <code class="docutils literal notranslate"><span class="pre">filter()</span></code> 函数类似， <code class="docutils literal notranslate"><span class="pre">compress()</span></code> 也是返回的一个迭代器。因此，如果你需要得到一个列表，
+那么你需要使用 <code class="docutils literal notranslate"><span class="pre">list()</span></code> 来将结果转换为列表类型。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

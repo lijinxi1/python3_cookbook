@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>11.4 通过CIDR地址生成对应的IP地址集 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="cidrip">
+<h1>11.4 通过CIDR地址生成对应的IP地址集<a class="headerlink" href="#cidrip" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你有一个CIDR网络地址比如“123.45.67.89/27”，你想将其转换成它所代表的所有IP
+（比如，“123.45.67.64”, “123.45.67.65”, …, “123.45.67.95”)）</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>可以使用 <code class="docutils literal notranslate"><span class="pre">ipaddress</span></code> 模块很容易的实现这样的计算。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ipaddress</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_network</span><span class="p">(</span><span class="s1">'123.45.67.64/27'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span>
+<span class="go">IPv4Network('123.45.67.64/27')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">net</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">123.45.67.64</span>
+<span class="go">123.45.67.65</span>
+<span class="go">123.45.67.66</span>
+<span class="go">123.45.67.67</span>
+<span class="go">123.45.67.68</span>
+<span class="gp">...</span>
+<span class="go">123.45.67.95</span>
+<span class="go">&gt;&gt;&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net6</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_network</span><span class="p">(</span><span class="s1">'12:3456:78:90ab:cd:ef01:23:30/125'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net6</span>
+<span class="go">IPv6Network('12:3456:78:90ab:cd:ef01:23:30/125')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">net6</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:30</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:31</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:32</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:33</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:34</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:35</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:36</span>
+<span class="go">12:3456:78:90ab:cd:ef01:23:37</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Network</span></code> 也允许像数组一样的索引取值，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="o">.</span><span class="n">num_addresses</span>
+<span class="go">32</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="go">IPv4Address('123.45.67.64')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">IPv4Address('123.45.67.65')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">IPv4Address('123.45.67.95')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">IPv4Address('123.45.67.94')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>另外，你还可以执行网络成员检查之类的操作：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="s1">'123.45.67.69'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="ow">in</span> <span class="n">net</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="s1">'123.45.67.123'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="ow">in</span> <span class="n">net</span>
+<span class="go">False</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>一个IP地址和网络地址能通过一个IP接口来指定，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">inet</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_interface</span><span class="p">(</span><span class="s1">'123.45.67.73/27'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inet</span><span class="o">.</span><span class="n">network</span>
+<span class="go">IPv4Network('123.45.67.64/27')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inet</span><span class="o">.</span><span class="n">ip</span>
+<span class="go">IPv4Address('123.45.67.73')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ipaddress</span></code> 模块有很多类可以表示IP地址、网络和接口。
+当你需要操作网络地址（比如解析、打印、验证等）的时候会很有用。</p>
+<p>要注意的是，<code class="docutils literal notranslate"><span class="pre">ipaddress</span></code> 模块跟其他一些和网络相关的模块比如 <code class="docutils literal notranslate"><span class="pre">socket</span></code> 库交集很少。
+所以，你不能使用 <code class="docutils literal notranslate"><span class="pre">IPv4Address</span></code> 的实例来代替一个地址字符串，你首先得显式的使用 <code class="docutils literal notranslate"><span class="pre">str()</span></code> 转换它。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="s1">'127.0.0.1'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">socket</span> <span class="kn">import</span> <span class="n">socket</span><span class="p">,</span> <span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="mi">8080</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">Can't convert 'IPv4Address' object to str implicitly</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="mi">8080</span><span class="p">))</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>更多相关内容，请参考 <a class="reference external" href="https://docs.python.org/3/howto/ipaddress.html">An Introduction to the ipaddress Module</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

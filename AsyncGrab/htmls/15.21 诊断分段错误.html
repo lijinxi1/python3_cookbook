@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.21 诊断分段错误 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p16_appendix.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p16_appendix.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>15.21 诊断分段错误<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>解释器因为某个分段错误、总线错误、访问越界或其他致命错误而突然间奔溃。
+你想获得Python堆栈信息，从而找出在发生错误的时候你的程序运行点。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">faulthandler</span></code> 模块能被用来帮你解决这个问题。
+在你的程序中引入下列代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">faulthandler</span>
+<span class="n">faulthandler</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>另外还可以像下面这样使用 <code class="docutils literal notranslate"><span class="pre">-Xfaulthandler</span></code> 来运行Python：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">python3</span> <span class="o">-</span><span class="n">Xfaulthandler</span> <span class="n">program</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>最后，你可以设置 <code class="docutils literal notranslate"><span class="pre">PYTHONFAULTHANDLER</span></code> 环境变量。
+开启faulthandler后，在C扩展中的致命错误会导致一个Python错误堆栈被打印出来。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Fatal</span> <span class="n">Python</span> <span class="n">error</span><span class="p">:</span> <span class="n">Segmentation</span> <span class="n">fault</span>
+
+<span class="n">Current</span> <span class="n">thread</span> <span class="mh">0x00007fff71106cc0</span><span class="p">:</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span> <span class="ow">in</span> <span class="n">foo</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">10</span> <span class="ow">in</span> <span class="n">bar</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">14</span> <span class="ow">in</span> <span class="n">spam</span>
+  <span class="n">File</span> <span class="s2">"example.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">19</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="n">Segmentation</span> <span class="n">fault</span>
+</pre></div>
+</div>
+<p>尽管这个并不能告诉你C代码中哪里出错了，但是至少能告诉你Python里面哪里有错。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>faulthandler会在Python代码执行出错的时候向你展示跟踪信息。
+至少，它会告诉你出错时被调用的最顶级扩展函数是哪个。
+在pdb和其他Python调试器的帮助下，你就能追根溯源找到错误所在的位置了。</p>
+<p>faulthandler不会告诉你任何C语言中的错误信息。
+因此，你需要使用传统的C调试器，比如gdb。
+不过，在faulthandler追踪信息可以让你去判断从哪里着手。
+还要注意的是在C中某些类型的错误可能不太容易恢复。
+例如，如果一个C扩展丢弃了程序堆栈信息，它会让faulthandler不可用，
+那么你也得不到任何输出（除了程序奔溃外）。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

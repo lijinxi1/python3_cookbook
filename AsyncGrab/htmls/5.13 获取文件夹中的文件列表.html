@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>5.13 获取文件夹中的文件列表 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>5.13 获取文件夹中的文件列表<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想获取文件系统中某个目录下的所有文件列表。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">os.listdir()</span></code> 函数来获取某个目录中的文件列表：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="n">names</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>结果会返回目录中所有文件列表，包括所有文件，子目录，符号链接等等。
+如果你需要通过某种方式过滤数据，可以考虑结合 <code class="docutils literal notranslate"><span class="pre">os.path</span></code> 库中的一些函数来使用列表推导。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os.path</span>
+
+<span class="c1"># Get all regular files</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">,</span> <span class="n">name</span><span class="p">))]</span>
+
+<span class="c1"># Get all dirs</span>
+<span class="n">dirnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">,</span> <span class="n">name</span><span class="p">))]</span>
+</pre></div>
+</div>
+<p>字符串的 <code class="docutils literal notranslate"><span class="pre">startswith()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">endswith()</span></code> 方法对于过滤一个目录的内容也是很有用的。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pyfiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>对于文件名的匹配，你可能会考虑使用 <code class="docutils literal notranslate"><span class="pre">glob</span></code> 或 <code class="docutils literal notranslate"><span class="pre">fnmatch</span></code> 模块。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">glob</span>
+<span class="n">pyfiles</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'somedir/*.py'</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">fnmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<span class="n">pyfiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s1">'somedir'</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fnmatch</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s1">'*.py'</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>获取目录中的列表是很容易的，但是其返回结果只是目录中实体名列表而已。
+如果你还想获取其他的元信息，比如文件大小，修改时间等等，
+你或许还需要使用到 <code class="docutils literal notranslate"><span class="pre">os.path</span></code> 模块中的函数或着 <code class="docutils literal notranslate"><span class="pre">os.stat()</span></code> 函数来收集数据。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example of getting a directory listing</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="n">pyfiles</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'*.py'</span><span class="p">)</span>
+
+<span class="c1"># Get file sizes and modification dates</span>
+<span class="n">name_sz_date</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pyfiles</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">mtime</span> <span class="ow">in</span> <span class="n">name_sz_date</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">mtime</span><span class="p">)</span>
+
+<span class="c1"># Alternative: Get file metadata</span>
+<span class="n">file_metadata</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pyfiles</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">file_metadata</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">st_size</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">st_mtime</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>最后还有一点要注意的就是，有时候在处理文件名编码问题时候可能会出现一些问题。
+通常来讲，函数 <code class="docutils literal notranslate"><span class="pre">os.listdir()</span></code> 返回的实体列表会根据系统默认的文件名编码来解码。
+但是有时候也会碰到一些不能正常解码的文件名。
+关于文件名的处理问题，在5.14和5.15小节有更详细的讲解。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

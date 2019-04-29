@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.9 用SWIG包装C代码 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="swigc">
+<h1>15.9 用SWIG包装C代码<a class="headerlink" href="#swigc" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想让你写的C代码作为一个C扩展模块来访问，想通过使用 <a class="reference external" href="http://www.swig.org/">Swig包装生成器</a> 来完成。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>Swig通过解析C头文件并自动创建扩展代码来操作。
+要使用它，你先要有一个C头文件。例如，我们示例的头文件如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/*</span> <span class="n">sample</span><span class="o">.</span><span class="n">h</span> <span class="o">*/</span>
+
+<span class="c1">#include &lt;math.h&gt;</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">gcd</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">);</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">in_mandel</span><span class="p">(</span><span class="n">double</span> <span class="n">x0</span><span class="p">,</span> <span class="n">double</span> <span class="n">y0</span><span class="p">,</span> <span class="nb">int</span> <span class="n">n</span><span class="p">);</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">divide</span><span class="p">(</span><span class="nb">int</span> <span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">b</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">remainder</span><span class="p">);</span>
+<span class="n">extern</span> <span class="n">double</span> <span class="n">avg</span><span class="p">(</span><span class="n">double</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">n</span><span class="p">);</span>
+
+<span class="n">typedef</span> <span class="n">struct</span> <span class="n">Point</span> <span class="p">{</span>
+    <span class="n">double</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">Point</span><span class="p">;</span>
+
+<span class="n">extern</span> <span class="n">double</span> <span class="n">distance</span><span class="p">(</span><span class="n">Point</span> <span class="o">*</span><span class="n">p1</span><span class="p">,</span> <span class="n">Point</span> <span class="o">*</span><span class="n">p2</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>一旦你有了这个头文件，下一步就是编写一个Swig”接口”文件。
+按照约定，这些文件以”.i”后缀并且类似下面这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>// sample.i - Swig interface
+%module sample
+%{
+#include "sample.h"
+%}
+
+/* Customizations */
+%extend Point {
+    /* Constructor for Point objects */
+    Point(double x, double y) {
+        Point *p = (Point *) malloc(sizeof(Point));
+        p-&gt;x = x;
+        p-&gt;y = y;
+        return p;
+   };
+};
+
+/* Map int *remainder as an output argument */
+%include typemaps.i
+%apply int *OUTPUT { int * remainder };
+
+/* Map the argument pattern (double *a, int n) to arrays */
+%typemap(in) (double *a, int n)(Py_buffer view) {
+  view.obj = NULL;
+  if (PyObject_GetBuffer($input, &amp;view, PyBUF_ANY_CONTIGUOUS | PyBUF_FORMAT) == -1) {
+    SWIG_fail;
+  }
+  if (strcmp(view.format,"d") != 0) {
+    PyErr_SetString(PyExc_TypeError, "Expected an array of doubles");
+    SWIG_fail;
+  }
+  $1 = (double *) view.buf;
+  $2 = view.len / sizeof(double);
+}
+
+%typemap(freearg) (double *a, int n) {
+  if (view$argnum.obj) {
+    PyBuffer_Release(&amp;view$argnum);
+  }
+}
+
+/* C declarations to be included in the extension module */
+
+extern int gcd(int, int);
+extern int in_mandel(double x0, double y0, int n);
+extern int divide(int a, int b, int *remainder);
+extern double avg(double *a, int n);
+
+typedef struct Point {
+    double x,y;
+} Point;
+
+extern double distance(Point *p1, Point *p2);
+</pre></div>
+</div>
+<p>一旦你写好了接口文件，就可以在命令行工具中调用Swig了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">swig</span> <span class="o">-</span><span class="n">python</span> <span class="o">-</span><span class="n">py3</span> <span class="n">sample</span><span class="o">.</span><span class="n">i</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+<p>swig的输出就是两个文件，sample_wrap.c和sample.py。
+后面的文件就是用户需要导入的。
+而sample_wrap.c文件是需要被编译到名叫 <code class="docutils literal notranslate"><span class="pre">_sample</span></code> 的支持模块的C代码。
+这个可以通过跟普通扩展模块一样的技术来完成。
+例如，你创建了一个如下所示的 <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> 文件：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<span class="kn">from</span> <span class="nn">distutils.core</span> <span class="kn">import</span> <span class="n">setup</span><span class="p">,</span> <span class="n">Extension</span>
+
+<span class="n">setup</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span>
+      <span class="n">py_modules</span><span class="o">=</span><span class="p">[</span><span class="s1">'sample.py'</span><span class="p">],</span>
+      <span class="n">ext_modules</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Extension</span><span class="p">(</span><span class="s1">'_sample'</span><span class="p">,</span>
+                  <span class="p">[</span><span class="s1">'sample_wrap.c'</span><span class="p">],</span>
+                  <span class="n">include_dirs</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">define_macros</span> <span class="o">=</span> <span class="p">[],</span>
+
+                  <span class="n">undef_macros</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">library_dirs</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">libraries</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'sample'</span><span class="p">]</span>
+                  <span class="p">)</span>
+        <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>要编译和测试，在setup.py上执行python3，如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>bash % python3 setup.py build_ext --inplace
+running build_ext
+building '_sample' extension
+gcc -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+-I/usr/local/include/python3.3m -c sample_wrap.c
+ -o build/temp.macosx-10.6-x86_64-3.3/sample_wrap.o
+sample_wrap.c: In function ‘SWIG_InitializeModule’:
+sample_wrap.c:3589: warning: statement with no effect
+gcc -bundle -undefined dynamic_lookup build/temp.macosx-10.6-x86_64-3.3/sample.o
+ build/temp.macosx-10.6-x86_64-3.3/sample_wrap.o -o _sample.so -lsample
+bash %
+</pre></div>
+</div>
+<p>如果一切正常的话，你会发现你就可以很方便的使用生成的C扩展模块了。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">[5, 2]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p2</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="p">)</span>
+<span class="go">2.8284271247461903</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">x</span>
+<span class="go">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">y</span>
+<span class="go">3.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">'d'</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">avg</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">2.0</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Swig是Python历史中构建扩展模块的最古老的工具之一。
+Swig能自动化很多包装生成器的处理。</p>
+<p>所有Swig接口都以类似下面这样的为开头：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">module</span> <span class="n">sample</span>
+<span class="o">%</span><span class="p">{</span>
+<span class="c1">#include "sample.h"</span>
+<span class="o">%</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>这个仅仅只是声明了扩展模块的名称并指定了C头文件，
+为了能让编译通过必须要包含这些头文件（位于 %{ 和 %} 的代码），
+将它们之间复制粘贴到输出代码中，这也是你要放置所有包含文件和其他编译需要的定义的地方。</p>
+<p>Swig接口的底下部分是一个C声明列表，你需要在扩展中包含它。
+这通常从头文件中被复制。在我们的例子中，我们仅仅像下面这样直接粘贴在头文件中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">module</span> <span class="n">sample</span>
+<span class="o">%</span><span class="p">{</span>
+<span class="c1">#include "sample.h"</span>
+<span class="o">%</span><span class="p">}</span>
+<span class="o">...</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">gcd</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">);</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">in_mandel</span><span class="p">(</span><span class="n">double</span> <span class="n">x0</span><span class="p">,</span> <span class="n">double</span> <span class="n">y0</span><span class="p">,</span> <span class="nb">int</span> <span class="n">n</span><span class="p">);</span>
+<span class="n">extern</span> <span class="nb">int</span> <span class="n">divide</span><span class="p">(</span><span class="nb">int</span> <span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">b</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">remainder</span><span class="p">);</span>
+<span class="n">extern</span> <span class="n">double</span> <span class="n">avg</span><span class="p">(</span><span class="n">double</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">n</span><span class="p">);</span>
+
+<span class="n">typedef</span> <span class="n">struct</span> <span class="n">Point</span> <span class="p">{</span>
+    <span class="n">double</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">Point</span><span class="p">;</span>
+
+<span class="n">extern</span> <span class="n">double</span> <span class="n">distance</span><span class="p">(</span><span class="n">Point</span> <span class="o">*</span><span class="n">p1</span><span class="p">,</span> <span class="n">Point</span> <span class="o">*</span><span class="n">p2</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>有一点需要强调的是这些声明会告诉Swig你想要在Python模块中包含哪些东西。
+通常你需要编辑这个声明列表或相应的修改下它。
+例如，如果你不想某些声明被包含进来，你要将它从声明列表中移除掉。</p>
+<p>使用Swig最复杂的地方是它能给C代码提供大量的自定义操作。
+这个主题太大，这里无法展开，但是我们在本节还剩展示了一些自定义的东西。</p>
+<p>第一个自定义是 <code class="docutils literal notranslate"><span class="pre">%extend</span></code> 指令允许方法被附加到已存在的结构体和类定义上。
+我例子中，这个被用来添加一个Point结构体的构造器方法。
+它可以让你像下面这样使用这个结构体：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果略过的话，Point对象就必须以更加复杂的方式来被创建：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Usage if %extend Point is omitted</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">Point</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>第二个自定义涉及到对 <code class="docutils literal notranslate"><span class="pre">typemaps.i</span></code> 库的引入和 <code class="docutils literal notranslate"><span class="pre">%apply</span></code> 指令，
+它会指示Swig参数签名 <code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">*remainder</span></code> 要被当做是输出值。
+这个实际上是一个模式匹配规则。
+在接下来的所有声明中，任何时候只要碰上 <code class="docutils literal notranslate"><span class="pre">int</span>  <span class="pre">*remainder</span></code> ，他就会被作为输出。
+这个自定义方法可以让 <code class="docutils literal notranslate"><span class="pre">divide()</span></code> 函数返回两个值。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">[5, 2]</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后一个涉及到 <code class="docutils literal notranslate"><span class="pre">%typemap</span></code> 指令的自定义可能是这里展示的最高级的特性了。
+一个typemap就是一个在输入中特定参数模式的规则。
+在本节中，一个typemap被定义为匹配参数模式 <code class="docutils literal notranslate"><span class="pre">(double</span> <span class="pre">*a,</span> <span class="pre">int</span> <span class="pre">n)</span></code> .
+在typemap内部是一个C代码片段，它告诉Swig怎样将一个Python对象转换为相应的C参数。
+本节代码使用了Python的缓存协议去匹配任何看上去类似双精度数组的输入参数
+（比如NumPy数组、array模块创建的数组等），更多请参考15.3小节。</p>
+<p>在typemap代码内部，$1和$2这样的变量替换会获取typemap模式的C参数值
+（比如$1映射为 <code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">*a</span></code> ）。$input指向一个作为输入的 <code class="docutils literal notranslate"><span class="pre">PyObject</span> <span class="pre">*</span></code> 参数，
+而 <code class="docutils literal notranslate"><span class="pre">$argnum</span></code> 就代表参数的个数。</p>
+<p>编写和理解typemaps是使用Swig最基本的前提。
+不仅是说代码更神秘，而且你需要理解Python C API和Swig和它交互的方式。
+Swig文档有更多这方面的细节，可以参考下。</p>
+<p>不过，如果你有大量的C代码需要被暴露为扩展模块。
+Swig是一个非常强大的工具。关键点在于Swig是一个处理C声明的编译器，
+通过强大的模式匹配和自定义组件，可以让你更改声明指定和类型处理方式。
+更多信息请去查阅 <a class="reference external" href="http://www.swig.org/">Swig网站</a> ，
+还有 <a class="reference external" href="http://www.swig.org/Doc2.0/Python.html">特定于Python的相关文档</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.16 不确定编码格式的C字符串 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="c">
+<h1>15.16 不确定编码格式的C字符串<a class="headerlink" href="#c" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你要在C和Python直接来回转换字符串，但是C中的编码格式并不确定。
+例如，可能C中的数据期望是UTF-8，但是并没有强制它必须是。
+你想编写代码来以一种优雅的方式处理这些不合格数据，这样就不会让Python奔溃或者破坏进程中的字符串数据。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>下面是一些C的数据和一个函数来演示这个问题：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/*</span> <span class="n">Some</span> <span class="n">dubious</span> <span class="n">string</span> <span class="n">data</span> <span class="p">(</span><span class="n">malformed</span> <span class="n">UTF</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span> <span class="o">*/</span>
+<span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">sdata</span> <span class="o">=</span> <span class="s2">"Spicy Jalape</span><span class="se">\xc3\xb1</span><span class="s2">o</span><span class="se">\xae</span><span class="s2">"</span><span class="p">;</span>
+<span class="nb">int</span> <span class="n">slen</span> <span class="o">=</span> <span class="mi">16</span><span class="p">;</span>
+
+<span class="o">/*</span> <span class="n">Output</span> <span class="n">character</span> <span class="n">data</span> <span class="o">*/</span>
+<span class="n">void</span> <span class="n">print_chars</span><span class="p">(</span><span class="n">char</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="nb">int</span> <span class="nb">len</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nb">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s2">"</span><span class="si">%2x</span><span class="s2"> "</span><span class="p">,</span> <span class="p">(</span><span class="n">unsigned</span> <span class="n">char</span><span class="p">)</span> <span class="n">s</span><span class="p">[</span><span class="n">n</span><span class="p">]);</span>
+    <span class="n">n</span><span class="o">++</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>在这个代码中，字符串 <code class="docutils literal notranslate"><span class="pre">sdata</span></code> 包含了UTF-8和不合格数据。
+不过，如果用户在C中调用 <code class="docutils literal notranslate"><span class="pre">print_chars(sdata,</span> <span class="pre">slen)</span></code> ，它缺能正常工作。
+现在假设你想将 <code class="docutils literal notranslate"><span class="pre">sdata</span></code> 的内容转换为一个Python字符串。
+进一步假设你在后面还想通过一个扩展将那个字符串传个 <code class="docutils literal notranslate"><span class="pre">print_chars()</span></code> 函数。
+下面是一种用来保护原始数据的方法，就算它编码有问题。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>/* Return the C string back to Python */
+static PyObject *py_retstr(PyObject *self, PyObject *args) {
+  if (!PyArg_ParseTuple(args, "")) {
+    return NULL;
+  }
+  return PyUnicode_Decode(sdata, slen, "utf-8", "surrogateescape");
+}
+
+/* Wrapper for the print_chars() function */
+static PyObject *py_print_chars(PyObject *self, PyObject *args) {
+  PyObject *obj, *bytes;
+  char *s = 0;
+  Py_ssize_t   len;
+
+  if (!PyArg_ParseTuple(args, "U", &amp;obj)) {
+    return NULL;
+  }
+
+  if ((bytes = PyUnicode_AsEncodedString(obj,"utf-8","surrogateescape"))
+        == NULL) {
+    return NULL;
+  }
+  PyBytes_AsStringAndSize(bytes, &amp;s, &amp;len);
+  print_chars(s, len);
+  Py_DECREF(bytes);
+  Py_RETURN_NONE;
+}
+</pre></div>
+</div>
+<p>如果你在Python中尝试这些函数，下面是运行效果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">retstr</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">'Spicy Jalapeño\udcae'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">53 70 69 63 79 20 4a 61 6c 61 70 65 c3 b1 6f ae</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>仔细观察结果你会发现，不合格字符串被编码到一个Python字符串中，并且并没有产生错误，
+并且当它被回传给C的时候，被转换为和之前原始C字符串一样的字节。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>本节展示了在扩展模块中处理字符串时会配到的一个棘手又很恼火的问题。
+也就是说，在扩展中的C字符串可能不会严格遵循Python所期望的Unicode编码/解码规则。
+因此，很可能一些不合格C数据传递到Python中去。
+一个很好的例子就是涉及到底层系统调用比如文件名这样的字符串。
+例如，如果一个系统调用返回给解释器一个损坏的字符串，不能被正确解码的时候会怎样呢？</p>
+<p>一般来讲，可以通过制定一些错误策略比如严格、忽略、替代或其他类似的来处理Unicode错误。
+不过，这些策略的一个缺点是它们永久性破坏了原始字符串的内容。
+例如，如果例子中的不合格数据使用这些策略之一解码，你会得到下面这样的结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">raw</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">'Spicy Jalape</span><span class="se">\xc3\xb1</span><span class="s1">o</span><span class="se">\xae</span><span class="s1">'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">,</span><span class="s1">'ignore'</span><span class="p">)</span>
+<span class="go">'Spicy Jalapeño'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">,</span><span class="s1">'replace'</span><span class="p">)</span>
+<span class="go">'Spicy Jalapeño?'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">surrogateescape</span></code> 错误处理策略会将所有不可解码字节转化为一个代理对的低位字节（udcXX中XX是原始字节值）。
+例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">,</span><span class="s1">'surrogateescape'</span><span class="p">)</span>
+<span class="go">'Spicy Jalapeño\udcae'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>单独的低位代理字符比如 <code class="docutils literal notranslate"><span class="pre">\udcae</span></code> 在Unicode中是非法的。
+因此，这个字符串就是一个非法表示。
+实际上，如果你将它传个一个执行输出的函数，你会得到一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">,</span> <span class="s1">'surrogateescape'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">UnicodeEncodeError</span>: <span class="n">'utf-8' codec can't encode character '\udcae'</span>
+<span class="go">in position 14: surrogates not allowed</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>然而，允许代理转换的关键点在于从C传给Python又回传给C的不合格字符串不会有任何数据丢失。
+当这个字符串再次使用 <code class="docutils literal notranslate"><span class="pre">surrogateescape</span></code> 编码时，代理字符会转换回原始字节。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">'Spicy Jalapeño\udcae'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">,</span><span class="s1">'surrogateescape'</span><span class="p">)</span>
+<span class="go">b'Spicy Jalape\xc3\xb1o\xae'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>作为一般准则，最好避免代理编码——如果你正确的使用了编码，那么你的代码就值得信赖。
+不过，有时候确实会出现你并不能控制数据编码并且你又不能忽略或替换坏数据，因为其他函数可能会用到它。
+那么就可以使用本节的技术了。</p>
+<p>最后一点要注意的是，Python中许多面向系统的函数，特别是和文件名、环境变量和命令行参数相关的
+都会使用代理编码。例如，如果你使用像 <code class="docutils literal notranslate"><span class="pre">os.listdir()</span></code> 这样的函数，
+传入一个包含了不可解码文件名的目录的话，它会返回一个代理转换后的字符串。
+参考5.15的相关章节。</p>
+<p><a class="reference external" href="https://www.python.org/dev/peps/pep-0383/">PEP 383</a>
+中有更多关于本机提到的以及和surrogateescape错误处理相关的信息。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

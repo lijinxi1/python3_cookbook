@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.13 传递NULL结尾的字符串给C函数库 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="nullc">
+<h1>15.13 传递NULL结尾的字符串给C函数库<a class="headerlink" href="#nullc" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你要写一个扩展模块，需要传递一个NULL结尾的字符串给C函数库。
+不过，你不是很确定怎样使用Python的Unicode字符串去实现它。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>许多C函数库包含一些操作NULL结尾的字符串，被声明类型为 <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code> .
+考虑如下的C函数，我们用来做演示和测试用的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">print_chars</span><span class="p">(</span><span class="n">char</span> <span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s2">"</span><span class="si">%2x</span><span class="s2"> "</span><span class="p">,</span> <span class="p">(</span><span class="n">unsigned</span> <span class="n">char</span><span class="p">)</span> <span class="o">*</span><span class="n">s</span><span class="p">);</span>
+
+        <span class="n">s</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>此函数会打印被传进来字符串的每个字符的十六进制表示，这样的话可以很容易的进行调试了。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">print_chars</span><span class="p">(</span><span class="s2">"Hello"</span><span class="p">);</span>   <span class="o">//</span> <span class="n">Outputs</span><span class="p">:</span> <span class="mi">48</span> <span class="mi">65</span> <span class="mi">6</span><span class="n">c</span> <span class="mi">6</span><span class="n">c</span> <span class="mi">6</span><span class="n">f</span>
+</pre></div>
+</div>
+<p>对于在Python中调用这样的C函数，你有几种选择。
+首先，你可以通过调用 <code class="docutils literal notranslate"><span class="pre">PyArg_ParseTuple()</span></code> 并指定”y“转换码来限制它只能操作字节，如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>static PyObject *py_print_chars(PyObject *self, PyObject *args) {
+  char *s;
+
+  if (!PyArg_ParseTuple(args, "y", &amp;s)) {
+    return NULL;
+  }
+  print_chars(s);
+  Py_RETURN_NONE;
+}
+</pre></div>
+</div>
+<p>结果函数的使用方法如下。仔细观察嵌入了NULL字节的字符串以及Unicode支持是怎样被拒绝的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="go">48 65 6c 6c 6f 20 57 6f 72 6c 64</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello</span><span class="se">\x00</span><span class="s1">World'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">must be bytes without null bytes, not bytes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">'str' does not support the buffer interface</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想传递Unicode字符串，在 <code class="docutils literal notranslate"><span class="pre">PyArg_ParseTuple()</span></code> 中使用”s“格式码，如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>static PyObject *py_print_chars(PyObject *self, PyObject *args) {
+  char *s;
+
+  if (!PyArg_ParseTuple(args, "s", &amp;s)) {
+    return NULL;
+  }
+  print_chars(s);
+  Py_RETURN_NONE;
+}
+</pre></div>
+</div>
+<p>当被使用的时候，它会自动将所有字符串转换为以NULL结尾的UTF-8编码。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="go">48 65 6c 6c 6f 20 57 6f 72 6c 64</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Spicy Jalape</span><span class="se">\u00f1</span><span class="s1">o'</span><span class="p">)</span>  <span class="c1"># Note: UTF-8 encoding</span>
+<span class="go">53 70 69 63 79 20 4a 61 6c 61 70 65 c3 b1 6f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Hello</span><span class="se">\x00</span><span class="s1">World'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">must be str without null characters, not str</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">TypeError</span>: <span class="n">must be str, not bytes</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果因为某些原因，你要直接使用 <code class="docutils literal notranslate"><span class="pre">PyObject</span> <span class="pre">*</span></code> 而不能使用 <code class="docutils literal notranslate"><span class="pre">PyArg_ParseTuple()</span></code> ，
+下面的例子向你展示了怎样从字节和字符串对象中检查和提取一个合适的 <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code> 引用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>/* Some Python Object (obtained somehow) */
+PyObject *obj;
+
+/* Conversion from bytes */
+{
+   char *s;
+   s = PyBytes_AsString(o);
+   if (!s) {
+      return NULL;   /* TypeError already raised */
+   }
+   print_chars(s);
+}
+
+/* Conversion to UTF-8 bytes from a string */
+{
+   PyObject *bytes;
+   char *s;
+   if (!PyUnicode_Check(obj)) {
+       PyErr_SetString(PyExc_TypeError, "Expected string");
+       return NULL;
+   }
+   bytes = PyUnicode_AsUTF8String(obj);
+   s = PyBytes_AsString(bytes);
+   print_chars(s);
+   Py_DECREF(bytes);
+}
+</pre></div>
+</div>
+<p>前面两种转换都可以确保是NULL结尾的数据，
+但是它们并不检查字符串中间是否嵌入了NULL字节。
+因此，如果这个很重要的话，那你需要自己去做检查了。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>如果可能的话，你应该避免去写一些依赖于NULL结尾的字符串，因为Python并没有这个需要。
+最好结合使用一个指针和长度值来处理字符串。
+不过，有时候你必须去处理C语言遗留代码时就没得选择了。</p>
+<p>尽管很容易使用，但是很容易忽视的一个问题是在 <code class="docutils literal notranslate"><span class="pre">PyArg_ParseTuple()</span></code>
+中使用“s”格式化码会有内存损耗。
+但你需要使用这种转换的时候，一个UTF-8字符串被创建并永久附加在原始字符串对象上面。
+如果原始字符串包含非ASCII字符的话，就会导致字符串的尺寸增到一直到被垃圾回收。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="s1">'Spicy Jalape</span><span class="se">\u00f1</span><span class="s1">o'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">87</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>     <span class="c1"># Passing string</span>
+<span class="go">53 70 69 63 79 20 4a 61 6c 61 70 65 c3 b1 6f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>   <span class="c1"># Notice increased size</span>
+<span class="go">103</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你在乎这个内存的损耗，你最好重写你的C扩展代码，让它使用 <code class="docutils literal notranslate"><span class="pre">PyUnicode_AsUTF8String()</span></code> 函数。如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>static PyObject *py_print_chars(PyObject *self, PyObject *args) {
+  PyObject *o, *bytes;
+  char *s;
+
+  if (!PyArg_ParseTuple(args, "U", &amp;o)) {
+    return NULL;
+  }
+  bytes = PyUnicode_AsUTF8String(o);
+  s = PyBytes_AsString(bytes);
+  print_chars(s);
+  Py_DECREF(bytes);
+  Py_RETURN_NONE;
+}
+</pre></div>
+</div>
+<p>通过这个修改，一个UTF-8编码的字符串根据需要被创建，然后在使用过后被丢弃。下面是修订后的效果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="s1">'Spicy Jalape</span><span class="se">\u00f1</span><span class="s1">o'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">87</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">53 70 69 63 79 20 4a 61 6c 61 70 65 c3 b1 6f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">87</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你试着传递NULL结尾字符串给ctypes包装过的函数，
+要注意的是ctypes只能允许传递字节，并且它不会检查中间嵌入的NULL字节。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lib</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s2">"./libsample.so"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">print_chars</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="go">48 65 6c 6c 6f 20 57 6f 72 6c 64</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="sa">b</span><span class="s1">'Hello</span><span class="se">\x00</span><span class="s1">World'</span><span class="p">)</span>
+<span class="go">48 65 6c 6c 6f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Hello World'</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">"&lt;stdin&gt;"</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">ctypes.ArgumentError</span>: <span class="n">argument 1: &lt;class 'TypeError'&gt;: wrong type</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想传递字符串而不是字节，你需要先执行手动的UTF-8编码。例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">print_chars</span><span class="p">(</span><span class="s1">'Hello World'</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>
+<span class="go">48 65 6c 6c 6f 20 57 6f 72 6c 64</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对于其他扩展工具（比如Swig、Cython），
+在你使用它们传递字符串给C代码时要先好好学习相应的东西了。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

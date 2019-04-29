@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>2.6 字符串忽略大小写的搜索替换 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>2.6 字符串忽略大小写的搜索替换<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你需要以忽略大小写的方式搜索与替换文本字符串</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>为了在文本操作时忽略大小写，你需要在使用 <code class="docutils literal notranslate"><span class="pre">re</span></code> 模块的时候给这些操作提供 <code class="docutils literal notranslate"><span class="pre">re.IGNORECASE</span></code> 标志参数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="s1">'UPPER PYTHON, lower python, Mixed Python'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">'python'</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="go">['PYTHON', 'python', 'Python']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">'python'</span><span class="p">,</span> <span class="s1">'snake'</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="go">'UPPER snake, lower snake, Mixed snake'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>最后的那个例子揭示了一个小缺陷，替换字符串并不会自动跟被匹配字符串的大小写保持一致。
+为了修复这个，你可能需要一个辅助函数，就像下面的这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">matchcase</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">replace</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">isupper</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">text</span><span class="o">.</span><span class="n">islower</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isupper</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">word</span>
+    <span class="k">return</span> <span class="n">replace</span>
+</pre></div>
+</div>
+<p>下面是使用上述函数的方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">'python'</span><span class="p">,</span> <span class="n">matchcase</span><span class="p">(</span><span class="s1">'snake'</span><span class="p">),</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="go">'UPPER SNAKE, lower snake, Mixed Snake'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>译者注： <code class="docutils literal notranslate"><span class="pre">matchcase('snake')</span></code> 返回了一个回调函数(参数必须是 <code class="docutils literal notranslate"><span class="pre">match</span></code> 对象)，前面一节提到过，
+<code class="docutils literal notranslate"><span class="pre">sub()</span></code> 函数除了接受替换字符串外，还能接受一个回调函数。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>对于一般的忽略大小写的匹配操作，简单的传递一个 <code class="docutils literal notranslate"><span class="pre">re.IGNORECASE</span></code> 标志参数就已经足够了。
+但是需要注意的是，这个对于某些需要大小写转换的Unicode匹配可能还不够，
+参考2.10小节了解更多细节。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>13.14 限制内存和CPU的使用量 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="cpu">
+<h1>13.14 限制内存和CPU的使用量<a class="headerlink" href="#cpu" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想对在Unix系统上面运行的程序设置内存或CPU的使用限制。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">resource</span></code> 模块能同时执行这两个任务。例如，要限制CPU时间，可以像下面这样做：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">resource</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">def</span> <span class="nf">time_exceeded</span><span class="p">(</span><span class="n">signo</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">"Time's up!"</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">set_max_runtime</span><span class="p">(</span><span class="n">seconds</span><span class="p">):</span>
+    <span class="c1"># Install the signal handler and set a resource limit</span>
+    <span class="n">soft</span><span class="p">,</span> <span class="n">hard</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">getrlimit</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RLIMIT_CPU</span><span class="p">)</span>
+    <span class="n">resource</span><span class="o">.</span><span class="n">setrlimit</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RLIMIT_CPU</span><span class="p">,</span> <span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="n">hard</span><span class="p">))</span>
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGXCPU</span><span class="p">,</span> <span class="n">time_exceeded</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">set_max_runtime</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>程序运行时，<code class="docutils literal notranslate"><span class="pre">SIGXCPU</span></code> 信号在时间过期时被生成，然后执行清理并退出。</p>
+<p>要限制内存使用，设置可使用的总内存值即可，如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">resource</span>
+
+<span class="k">def</span> <span class="nf">limit_memory</span><span class="p">(</span><span class="n">maxsize</span><span class="p">):</span>
+    <span class="n">soft</span><span class="p">,</span> <span class="n">hard</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">getrlimit</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RLIMIT_AS</span><span class="p">)</span>
+    <span class="n">resource</span><span class="o">.</span><span class="n">setrlimit</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RLIMIT_AS</span><span class="p">,</span> <span class="p">(</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">hard</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>像这样设置了内存限制后，程序运行到没有多余内存时会抛出 <code class="docutils literal notranslate"><span class="pre">MemoryError</span></code> 异常。</p>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>在本节例子中，<code class="docutils literal notranslate"><span class="pre">setrlimit()</span></code> 函数被用来设置特定资源上面的软限制和硬限制。
+软限制是一个值，当超过这个值的时候操作系统通常会发送一个信号来限制或通知该进程。
+硬限制是用来指定软限制能设定的最大值。通常来讲，这个由系统管理员通过设置系统级参数来决定。
+尽管硬限制可以改小一点，但是最好不要使用用户进程去修改。</p>
+<p><code class="docutils literal notranslate"><span class="pre">setrlimit()</span></code> 函数还能被用来设置子进程数量、打开文件数以及类似系统资源的限制。
+更多详情请参考 <code class="docutils literal notranslate"><span class="pre">resource</span></code> 模块的文档。</p>
+<p>需要注意的是本节内容只能适用于Unix系统，并且不保证所有系统都能如期工作。
+比如我们在测试的时候，它能在Linux上面正常运行，但是在OS X上却不能。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

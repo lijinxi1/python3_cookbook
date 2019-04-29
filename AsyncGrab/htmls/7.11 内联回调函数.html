@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>7.11 内联回调函数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>7.11 内联回调函数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>当你编写使用回调函数的代码的时候，担心很多小函数的扩张可能会弄乱程序控制流。
+你希望找到某个方法来让代码看上去更像是一个普通的执行序列。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>通过使用生成器和协程可以使得回调函数内联在某个函数中。
+为了演示说明，假设你有如下所示的一个执行某种计算任务然后调用一个回调函数的函数(参考7.10小节)：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_async</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="c1"># Compute the result</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="c1"># Invoke the callback with the result</span>
+    <span class="n">callback</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>接下来让我们看一下下面的代码，它包含了一个 <code class="docutils literal notranslate"><span class="pre">Async</span></code> 类和一个 <code class="docutils literal notranslate"><span class="pre">inlined_async</span></code> 装饰器：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="k">class</span> <span class="nc">Async</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+
+<span class="k">def</span> <span class="nf">inlined_async</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">result_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+        <span class="n">result_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                <span class="n">apply_async</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">result_queue</span><span class="o">.</span><span class="n">put</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">break</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+</pre></div>
+</div>
+<p>这两个代码片段允许你使用 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句内联回调步骤。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+
+<span class="nd">@inlined_async</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">Async</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">Async</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="s1">'hello'</span><span class="p">,</span> <span class="s1">'world'</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">Async</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">'Goodbye'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>如果你调用 <code class="docutils literal notranslate"><span class="pre">test()</span></code> ，你会得到类似如下的输出：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="mi">5</span>
+<span class="n">helloworld</span>
+<span class="mi">0</span>
+<span class="mi">2</span>
+<span class="mi">4</span>
+<span class="mi">6</span>
+<span class="mi">8</span>
+<span class="mi">10</span>
+<span class="mi">12</span>
+<span class="mi">14</span>
+<span class="mi">16</span>
+<span class="mi">18</span>
+<span class="n">Goodbye</span>
+</pre></div>
+</div>
+<p>你会发现，除了那个特别的装饰器和 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句外，其他地方并没有出现任何的回调函数(其实是在后台定义的)。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>本小节会实实在在的测试你关于回调函数、生成器和控制流的知识。</p>
+<p>首先，在需要使用到回调的代码中，关键点在于当前计算工作会挂起并在将来的某个时候重启(比如异步执行)。
+当计算重启时，回调函数被调用来继续处理结果。<code class="docutils literal notranslate"><span class="pre">apply_async()</span></code> 函数演示了执行回调的实际逻辑，
+尽管实际情况中它可能会更加复杂(包括线程、进程、事件处理器等等)。</p>
+<p>计算的暂停与重启思路跟生成器函数的执行模型不谋而合。
+具体来讲，<code class="docutils literal notranslate"><span class="pre">yield</span></code> 操作会使一个生成器函数产生一个值并暂停。
+接下来调用生成器的 <code class="docutils literal notranslate"><span class="pre">__next__()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">send()</span></code> 方法又会让它从暂停处继续执行。</p>
+<p>根据这个思路，这一小节的核心就在 <code class="docutils literal notranslate"><span class="pre">inline_async()</span></code> 装饰器函数中了。
+关键点就是，装饰器会逐步遍历生成器函数的所有 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句，每一次一个。
+为了这样做，刚开始的时候创建了一个 <code class="docutils literal notranslate"><span class="pre">result</span></code> 队列并向里面放入一个 <code class="docutils literal notranslate"><span class="pre">None</span></code> 值。
+然后开始一个循环操作，从队列中取出结果值并发送给生成器，它会持续到下一个 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句，
+在这里一个 <code class="docutils literal notranslate"><span class="pre">Async</span></code> 的实例被接受到。然后循环开始检查函数和参数，并开始进行异步计算 <code class="docutils literal notranslate"><span class="pre">apply_async()</span></code> 。
+然而，这个计算有个最诡异部分是它并没有使用一个普通的回调函数，而是用队列的 <code class="docutils literal notranslate"><span class="pre">put()</span></code> 方法来回调。</p>
+<p>这时候，是时候详细解释下到底发生了什么了。主循环立即返回顶部并在队列上执行 <code class="docutils literal notranslate"><span class="pre">get()</span></code> 操作。
+如果数据存在，它一定是 <code class="docutils literal notranslate"><span class="pre">put()</span></code> 回调存放的结果。如果没有数据，那么先暂停操作并等待结果的到来。
+这个具体怎样实现是由 <code class="docutils literal notranslate"><span class="pre">apply_async()</span></code> 函数来决定的。
+如果你不相信会有这么神奇的事情，你可以使用 <code class="docutils literal notranslate"><span class="pre">multiprocessing</span></code> 库来试一下，
+在单独的进程中执行异步计算操作，如下所示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">multiprocessing</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">()</span>
+    <span class="n">apply_async</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">apply_async</span>
+
+    <span class="c1"># Run the test function</span>
+    <span class="n">test</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>实际上你会发现这个真的就是这样的，但是要解释清楚具体的控制流得需要点时间了。</p>
+<p>将复杂的控制流隐藏到生成器函数背后的例子在标准库和第三方包中都能看到。
+比如，在 <code class="docutils literal notranslate"><span class="pre">contextlib</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">@contextmanager</span></code> 装饰器使用了一个令人费解的技巧，
+通过一个 <code class="docutils literal notranslate"><span class="pre">yield</span></code> 语句将进入和离开上下文管理器粘合在一起。
+另外非常流行的 <code class="docutils literal notranslate"><span class="pre">Twisted</span></code> 包中也包含了非常类似的内联回调。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

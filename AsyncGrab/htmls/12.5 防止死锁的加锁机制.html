@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>12.5 防止死锁的加锁机制 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>12.5 防止死锁的加锁机制<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你正在写一个多线程程序，其中线程需要一次获取多个锁，此时如何避免死锁问题。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>在多线程程序中，死锁问题很大一部分是由于线程同时获取多个锁造成的。举个例子：一个线程获取了第一个锁，然后在获取第二个锁的
+时候发生阻塞，那么这个线程就可能阻塞其他线程的执行，从而导致整个程序假死。
+解决死锁问题的一种方案是为程序中的每一个锁分配一个唯一的id，然后只允许按照升序规则来使用多个锁，这个规则使用上下文管理器
+是非常容易实现的，示例如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+<span class="c1"># Thread-local state to stored information on locks already acquired</span>
+<span class="n">_local</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="o">*</span><span class="n">locks</span><span class="p">):</span>
+    <span class="c1"># Sort locks by object identifier</span>
+    <span class="n">locks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">locks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+    <span class="c1"># Make sure lock order of previously acquired locks is not violated</span>
+    <span class="n">acquired</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_local</span><span class="p">,</span><span class="s1">'acquired'</span><span class="p">,[])</span>
+    <span class="k">if</span> <span class="n">acquired</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">lock</span><span class="p">)</span> <span class="k">for</span> <span class="n">lock</span> <span class="ow">in</span> <span class="n">acquired</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">id</span><span class="p">(</span><span class="n">locks</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'Lock Order Violation'</span><span class="p">)</span>
+
+    <span class="c1"># Acquire all of the locks</span>
+    <span class="n">acquired</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">locks</span><span class="p">)</span>
+    <span class="n">_local</span><span class="o">.</span><span class="n">acquired</span> <span class="o">=</span> <span class="n">acquired</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lock</span> <span class="ow">in</span> <span class="n">locks</span><span class="p">:</span>
+            <span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="c1"># Release locks in reverse order of acquisition</span>
+        <span class="k">for</span> <span class="n">lock</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">locks</span><span class="p">):</span>
+            <span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">acquired</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">locks</span><span class="p">):]</span>
+</pre></div>
+</div>
+<p>如何使用这个上下文管理器呢？你可以按照正常途径创建一个锁对象，但不论是单个锁还是多个锁中都使用 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 函数来申请锁，
+示例如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="n">x_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="n">y_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">thread_1</span><span class="p">():</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">x_lock</span><span class="p">,</span> <span class="n">y_lock</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">'Thread-1'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">thread_2</span><span class="p">():</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">y_lock</span><span class="p">,</span> <span class="n">x_lock</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">'Thread-2'</span><span class="p">)</span>
+
+<span class="n">t1</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">thread_1</span><span class="p">)</span>
+<span class="n">t1</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">t1</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="n">t2</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">thread_2</span><span class="p">)</span>
+<span class="n">t2</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">t2</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>如果你执行这段代码，你会发现它即使在不同的函数中以不同的顺序获取锁也没有发生死锁。
+其关键在于，在第一段代码中，我们对这些锁进行了排序。通过排序，使得不管用户以什么样的顺序来请求锁，这些锁都会按照固定的顺序被获取。
+如果有多个 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 操作被嵌套调用，可以通过线程本地存储（TLS）来检测潜在的死锁问题。
+假设你的代码是这样写的：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="n">x_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="n">y_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">thread_1</span><span class="p">():</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">x_lock</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">y_lock</span><span class="p">):</span>
+                <span class="k">print</span><span class="p">(</span><span class="s1">'Thread-1'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">thread_2</span><span class="p">():</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">y_lock</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">x_lock</span><span class="p">):</span>
+                <span class="k">print</span><span class="p">(</span><span class="s1">'Thread-2'</span><span class="p">)</span>
+
+<span class="n">t1</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">thread_1</span><span class="p">)</span>
+<span class="n">t1</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">t1</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="n">t2</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">thread_2</span><span class="p">)</span>
+<span class="n">t2</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">t2</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>如果你运行这个版本的代码，必定会有一个线程发生崩溃，异常信息可能像这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ne">Exception</span> <span class="ow">in</span> <span class="n">thread</span> <span class="n">Thread</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">"/usr/local/lib/python3.3/threading.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">639</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_bootstrap_inner</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s2">"/usr/local/lib/python3.3/threading.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">596</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s2">"deadlock.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">49</span><span class="p">,</span> <span class="ow">in</span> <span class="n">thread_1</span>
+    <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">y_lock</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">"/usr/local/lib/python3.3/contextlib.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">48</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__enter__</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gen</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s2">"deadlock.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">15</span><span class="p">,</span> <span class="ow">in</span> <span class="n">acquire</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Lock Order Violation"</span><span class="p">)</span>
+<span class="ne">RuntimeError</span><span class="p">:</span> <span class="n">Lock</span> <span class="n">Order</span> <span class="n">Violation</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>发生崩溃的原因在于，每个线程都记录着自己已经获取到的锁。 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 函数会检查之前已经获取的锁列表，
+由于锁是按照升序排列获取的，所以函数会认为之前已获取的锁的id必定小于新申请到的锁，这时就会触发异常。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>死锁是每一个多线程程序都会面临的一个问题（就像它是每一本操作系统课本的共同话题一样）。根据经验来讲，尽可能保证每一个
+线程只能同时保持一个锁，这样程序就不会被死锁问题所困扰。一旦有线程同时申请多个锁，一切就不可预料了。</p>
+<p>死锁的检测与恢复是一个几乎没有优雅的解决方案的扩展话题。一个比较常用的死锁检测与恢复的方案是引入看门狗计数器。当线程正常
+运行的时候会每隔一段时间重置计数器，在没有发生死锁的情况下，一切都正常进行。一旦发生死锁，由于无法重置计数器导致定时器
+超时，这时程序会通过重启自身恢复到正常状态。</p>
+<p>避免死锁是另外一种解决死锁问题的方式，在进程获取锁的时候会严格按照对象id升序排列获取，经过数学证明，这样保证程序不会进入
+死锁状态。证明就留给读者作为练习了。避免死锁的主要思想是，单纯地按照对象id递增的顺序加锁不会产生循环依赖，而循环依赖是
+死锁的一个必要条件，从而避免程序进入死锁状态。</p>
+<p>下面以一个关于线程死锁的经典问题：“哲学家就餐问题”，作为本节最后一个例子。题目是这样的：五位哲学家围坐在一张桌子前，每个人
+面前有一碗饭和一只筷子。在这里每个哲学家可以看做是一个独立的线程，而每只筷子可以看做是一个锁。每个哲学家可以处在静坐、
+思考、吃饭三种状态中的一个。需要注意的是，每个哲学家吃饭是需要两只筷子的，这样问题就来了：如果每个哲学家都拿起自己左边的筷子，
+那么他们五个都只能拿着一只筷子坐在那儿，直到饿死。此时他们就进入了死锁状态。
+下面是一个简单的使用死锁避免机制解决“哲学家就餐问题”的实现：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="c1"># The philosopher thread</span>
+<span class="k">def</span> <span class="nf">philosopher</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">acquire</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="n">right</span><span class="p">):</span>
+             <span class="k">print</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">currentThread</span><span class="p">(),</span> <span class="s1">'eating'</span><span class="p">)</span>
+
+<span class="c1"># The chopsticks (represented by locks)</span>
+<span class="n">NSTICKS</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">chopsticks</span> <span class="o">=</span> <span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NSTICKS</span><span class="p">)]</span>
+
+<span class="c1"># Create all of the philosophers</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NSTICKS</span><span class="p">):</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">philosopher</span><span class="p">,</span>
+                         <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">chopsticks</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="n">chopsticks</span><span class="p">[(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">NSTICKS</span><span class="p">]))</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>最后，要特别注意到，为了避免死锁，所有的加锁操作必须使用 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 函数。如果代码中的某部分绕过acquire
+函数直接申请锁，那么整个死锁避免机制就不起作用了。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

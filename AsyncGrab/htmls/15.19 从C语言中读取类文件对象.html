@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>15.19 从C语言中读取类文件对象 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="c">
+<h1>15.19 从C语言中读取类文件对象<a class="headerlink" href="#c" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你要写C扩展来读取来自任何Python类文件对象中的数据（比如普通文件、StringIO对象等）。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>要读取一个类文件对象的数据，你需要重复调用 <code class="docutils literal notranslate"><span class="pre">read()</span></code> 方法，然后正确的解码获得的数据。</p>
+<p>下面是一个C扩展函数例子，仅仅只是读取一个类文件对象中的所有数据并将其输出到标准输出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>#define CHUNK_SIZE 8192
+
+/* Consume a "file-like" object and write bytes to stdout */
+static PyObject *py_consume_file(PyObject *self, PyObject *args) {
+  PyObject *obj;
+  PyObject *read_meth;
+  PyObject *result = NULL;
+  PyObject *read_args;
+
+  if (!PyArg_ParseTuple(args,"O", &amp;obj)) {
+    return NULL;
+  }
+
+  /* Get the read method of the passed object */
+  if ((read_meth = PyObject_GetAttrString(obj, "read")) == NULL) {
+    return NULL;
+  }
+
+  /* Build the argument list to read() */
+  read_args = Py_BuildValue("(i)", CHUNK_SIZE);
+  while (1) {
+    PyObject *data;
+    PyObject *enc_data;
+    char *buf;
+    Py_ssize_t len;
+
+    /* Call read() */
+    if ((data = PyObject_Call(read_meth, read_args, NULL)) == NULL) {
+      goto final;
+    }
+
+    /* Check for EOF */
+    if (PySequence_Length(data) == 0) {
+      Py_DECREF(data);
+      break;
+    }
+
+    /* Encode Unicode as Bytes for C */
+    if ((enc_data=PyUnicode_AsEncodedString(data,"utf-8","strict"))==NULL) {
+      Py_DECREF(data);
+      goto final;
+    }
+
+    /* Extract underlying buffer data */
+    PyBytes_AsStringAndSize(enc_data, &amp;buf, &amp;len);
+
+    /* Write to stdout (replace with something more useful) */
+    write(1, buf, len);
+
+    /* Cleanup */
+    Py_DECREF(enc_data);
+    Py_DECREF(data);
+  }
+  result = Py_BuildValue("");
+
+ final:
+  /* Cleanup */
+  Py_DECREF(read_meth);
+  Py_DECREF(read_args);
+  return result;
+}
+</pre></div>
+</div>
+<p>要测试这个代码，先构造一个类文件对象比如一个StringIO实例，然后传递进来：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">io</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="s1">'Hello</span><span class="se">\n</span><span class="s1">World</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sample</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="o">.</span><span class="n">consume_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">Hello</span>
+<span class="go">World</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>和普通系统文件不同的是，一个类文件对象并不需要使用低级文件描述符来构建。
+因此，你不能使用普通的C库函数来访问它。
+你需要使用Python的C API来像普通文件类似的那样操作类文件对象。</p>
+<p>在我们的解决方案中，<code class="docutils literal notranslate"><span class="pre">read()</span></code> 方法从被传递的对象中提取出来。
+一个参数列表被构建然后不断的被传给 <code class="docutils literal notranslate"><span class="pre">PyObject_Call()</span></code> 来调用这个方法。
+要检查文件末尾（EOF），使用了 <code class="docutils literal notranslate"><span class="pre">PySequence_Length()</span></code> 来查看是否返回对象长度为0.</p>
+<p>对于所有的I/O操作，你需要关注底层的编码格式，还有字节和Unicode之前的区别。
+本节演示了如何以文本模式读取一个文件并将结果文本解码为一个字节编码，这样在C中就可以使用它了。
+如果你想以二进制模式读取文件，只需要修改一点点即可，例如：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>...
+/* Call read() */
+if ((data = PyObject_Call(read_meth, read_args, NULL)) == NULL) {
+  goto final;
+}
+
+/* Check for EOF */
+if (PySequence_Length(data) == 0) {
+  Py_DECREF(data);
+  break;
+}
+if (!PyBytes_Check(data)) {
+  Py_DECREF(data);
+  PyErr_SetString(PyExc_IOError, "File must be in binary mode");
+  goto final;
+}
+
+/* Extract underlying buffer data */
+PyBytes_AsStringAndSize(data, &amp;buf, &amp;len);
+...
+</pre></div>
+</div>
+<p>本节最难的地方在于如何进行正确的内存管理。
+当处理 <code class="docutils literal notranslate"><span class="pre">PyObject</span> <span class="pre">*</span></code> 变量的时候，需要注意管理引用计数以及在不需要的变量的时候清理它们的值。
+对 <code class="docutils literal notranslate"><span class="pre">Py_DECREF()</span></code> 的调用就是来做这个的。</p>
+<p>本节代码以一种通用方式编写，因此他也能适用于其他的文件操作，比如写文件。
+例如，要写数据，只需要获取类文件对象的 <code class="docutils literal notranslate"><span class="pre">write()</span></code> 方法，将数据转换为合适的Python对象
+（字节或Unicode），然后调用该方法将输入写入到文件。</p>
+<p>最后，尽管类文件对象通常还提供其他方法（比如readline(), read_info()），
+我们最好只使用基本的 <code class="docutils literal notranslate"><span class="pre">read()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">write()</span></code> 方法。
+在写C扩展的时候，能简单就尽量简单。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

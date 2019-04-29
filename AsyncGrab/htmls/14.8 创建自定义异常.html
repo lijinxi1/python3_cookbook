@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>14.8 创建自定义异常 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>14.8 创建自定义异常<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>在你构建的应用程序中，你想将底层异常包装成自定义的异常。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>创建新的异常很简单——定义新的类，让它继承自 <code class="docutils literal notranslate"><span class="pre">Exception</span></code> （或者是任何一个已存在的异常类型）。
+例如，如果你编写网络相关的程序，你可能会定义一些类似如下的异常：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NetworkError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">HostnameError</span><span class="p">(</span><span class="n">NetworkError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">TimeoutError</span><span class="p">(</span><span class="n">NetworkError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">ProtocolError</span><span class="p">(</span><span class="n">NetworkError</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>然后用户就可以像通常那样使用这些异常了，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">TimeoutError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="o">...</span>
+<span class="k">except</span> <span class="n">ProtocolError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>自定义异常类应该总是继承自内置的 <code class="docutils literal notranslate"><span class="pre">Exception</span></code> 类，
+或者是继承自那些本身就是从 <code class="docutils literal notranslate"><span class="pre">Exception</span></code> 继承而来的类。
+尽管所有类同时也继承自 <code class="docutils literal notranslate"><span class="pre">BaseException</span></code> ，但你不应该使用这个基类来定义新的异常。
+<code class="docutils literal notranslate"><span class="pre">BaseException</span></code> 是为系统退出异常而保留的，比如 <code class="docutils literal notranslate"><span class="pre">KeyboardInterrupt</span></code> 或 <code class="docutils literal notranslate"><span class="pre">SystemExit</span></code>
+以及其他那些会给应用发送信号而退出的异常。
+因此，捕获这些异常本身没什么意义。
+这样的话，假如你继承 <code class="docutils literal notranslate"><span class="pre">BaseException</span></code>
+可能会导致你的自定义异常不会被捕获而直接发送信号退出程序运行。</p>
+<p>在程序中引入自定义异常可以使得你的代码更具可读性，能清晰显示谁应该阅读这个代码。
+还有一种设计是将自定义异常通过继承组合起来。在复杂应用程序中，
+使用基类来分组各种异常类也是很有用的。它可以让用户捕获一个范围很窄的特定异常，比如下面这样的：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ProtocolError</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>你还能捕获更大范围的异常，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">NetworkError</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>如果你想定义的新异常重写了 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 方法，
+确保你使用所有参数调用 <code class="docutils literal notranslate"><span class="pre">Exception.__init__()</span></code> ，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CustomError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+</pre></div>
+</div>
+<p>看上去有点奇怪，不过Exception的默认行为是接受所有传递的参数并将它们以元组形式存储在 <code class="docutils literal notranslate"><span class="pre">.args</span></code> 属性中.
+很多其他函数库和部分Python库默认所有异常都必须有 <code class="docutils literal notranslate"><span class="pre">.args</span></code> 属性，
+因此如果你忽略了这一步，你会发现有些时候你定义的新异常不会按照期望运行。
+为了演示 <code class="docutils literal notranslate"><span class="pre">.args</span></code> 的使用，考虑下下面这个使用内置的 <cite>RuntimeError`</cite> 异常的交互会话，
+注意看raise语句中使用的参数个数是怎样的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'It failed'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('It failed',)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'It failed'</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="s1">'spam'</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('It failed', 42, 'spam')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>关于创建自定义异常的更多信息，请参考`Python官方文档 &lt;<a class="reference external" href="https://docs.python.org/3/tutorial/errors.html">https://docs.python.org/3/tutorial/errors.html</a>&gt;`_</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

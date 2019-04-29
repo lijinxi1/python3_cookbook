@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.24 让类支持比较操作 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.24 让类支持比较操作<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想让某个类的实例支持标准的比较运算(比如&gt;=,!=,&lt;=,&lt;等)，但是又不想去实现那一大丢的特殊方法。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Python类对每个比较操作都需要实现一个特殊方法来支持。
+例如为了支持&gt;=操作符，你需要定义一个 <code class="docutils literal notranslate"><span class="pre">__ge__()</span></code> 方法。
+尽管定义一个方法没什么问题，但如果要你实现所有可能的比较方法那就有点烦人了。</p>
+<p>装饰器 <code class="docutils literal notranslate"><span class="pre">functools.total_ordering</span></code> 就是用来简化这个处理的。
+使用它来装饰一个来，你只需定义一个 <code class="docutils literal notranslate"><span class="pre">__eq__()</span></code> 方法，
+外加其他方法(__lt__, __le__, __gt__, or __ge__)中的一个即可。
+然后装饰器会自动为你填充其它比较方法。</p>
+<p>作为例子，我们构建一些房子，然后给它们增加一些房间，最后通过房子大小来比较它们：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">total_ordering</span>
+
+<span class="k">class</span> <span class="nc">Room</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">square_feet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span>
+
+<span class="nd">@total_ordering</span>
+<span class="k">class</span> <span class="nc">House</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">style</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rooms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">living_space_footage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">square_feet</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rooms</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_room</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">room</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rooms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">room</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">'{}: {} square foot {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">living_space_footage</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">living_space_footage</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">living_space_footage</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">living_space_footage</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">living_space_footage</span>
+</pre></div>
+</div>
+<p>这里我们只是给House类定义了两个方法：<code class="docutils literal notranslate"><span class="pre">__eq__()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">__lt__()</span></code> ，它就能支持所有的比较操作：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a few houses, and add rooms to them</span>
+<span class="n">h1</span> <span class="o">=</span> <span class="n">House</span><span class="p">(</span><span class="s1">'h1'</span><span class="p">,</span> <span class="s1">'Cape'</span><span class="p">)</span>
+<span class="n">h1</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Master Bedroom'</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">21</span><span class="p">))</span>
+<span class="n">h1</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Living Room'</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">h1</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Kitchen'</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+<span class="n">h1</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Office'</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">h2</span> <span class="o">=</span> <span class="n">House</span><span class="p">(</span><span class="s1">'h2'</span><span class="p">,</span> <span class="s1">'Ranch'</span><span class="p">)</span>
+<span class="n">h2</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Master Bedroom'</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">21</span><span class="p">))</span>
+<span class="n">h2</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Living Room'</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">h2</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Kitchen'</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+<span class="n">h3</span> <span class="o">=</span> <span class="n">House</span><span class="p">(</span><span class="s1">'h3'</span><span class="p">,</span> <span class="s1">'Split'</span><span class="p">)</span>
+<span class="n">h3</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Master Bedroom'</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">21</span><span class="p">))</span>
+<span class="n">h3</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Living Room'</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+<span class="n">h3</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Office'</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+<span class="n">h3</span><span class="o">.</span><span class="n">add_room</span><span class="p">(</span><span class="n">Room</span><span class="p">(</span><span class="s1">'Kitchen'</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">))</span>
+<span class="n">houses</span> <span class="o">=</span> <span class="p">[</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Is h1 bigger than h2?'</span><span class="p">,</span> <span class="n">h1</span> <span class="o">&gt;</span> <span class="n">h2</span><span class="p">)</span> <span class="c1"># prints True</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Is h2 smaller than h3?'</span><span class="p">,</span> <span class="n">h2</span> <span class="o">&lt;</span> <span class="n">h3</span><span class="p">)</span> <span class="c1"># prints True</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Is h2 greater than or equal to h1?'</span><span class="p">,</span> <span class="n">h2</span> <span class="o">&gt;=</span> <span class="n">h1</span><span class="p">)</span> <span class="c1"># Prints False</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Which one is biggest?'</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">houses</span><span class="p">))</span> <span class="c1"># Prints 'h3: 1101-square-foot Split'</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">'Which is smallest?'</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">houses</span><span class="p">))</span> <span class="c1"># Prints 'h2: 846-square-foot Ranch'</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>其实 <code class="docutils literal notranslate"><span class="pre">total_ordering</span></code> 装饰器也没那么神秘。
+它就是定义了一个从每个比较支持方法到所有需要定义的其他方法的一个映射而已。
+比如你定义了 <code class="docutils literal notranslate"><span class="pre">__le__()</span></code> 方法，那么它就被用来构建所有其他的需要定义的那些特殊方法。
+实际上就是在类里面像下面这样定义了一些特殊方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">House</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="c1"># Methods created by @total_ordering</span>
+    <span class="fm">__le__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="bp">self</span> <span class="o">&lt;</span> <span class="n">other</span> <span class="ow">or</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+    <span class="fm">__gt__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">&lt;</span> <span class="n">other</span> <span class="ow">or</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+    <span class="fm">__ge__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">&lt;</span> <span class="n">other</span><span class="p">)</span>
+    <span class="fm">__ne__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+</pre></div>
+</div>
+<p>当然，你自己去写也很容易，但是使用 <code class="docutils literal notranslate"><span class="pre">@total_ordering</span></code> 可以简化代码，何乐而不为呢。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

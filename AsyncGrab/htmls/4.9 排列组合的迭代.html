@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>4.9 排列组合的迭代 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>4.9 排列组合的迭代<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想迭代遍历一个集合中元素的所有可能的排列或组合</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>itertools模块提供了三个函数来解决这类问题。
+其中一个是 <code class="docutils literal notranslate"><span class="pre">itertools.permutations()</span></code> ，
+它接受一个集合并产生一个元组序列，每个元组由集合中所有元素的一个可能排列组成。
+也就是说通过打乱集合中元素排列顺序生成一个元组，比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'a'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'c'</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a', 'b', 'c')</span>
+<span class="go">('a', 'c', 'b')</span>
+<span class="go">('b', 'a', 'c')</span>
+<span class="go">('b', 'c', 'a')</span>
+<span class="go">('c', 'a', 'b')</span>
+<span class="go">('c', 'b', 'a')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想得到指定长度的所有排列，你可以传递一个可选的长度参数。就像这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a', 'b')</span>
+<span class="go">('a', 'c')</span>
+<span class="go">('b', 'a')</span>
+<span class="go">('b', 'c')</span>
+<span class="go">('c', 'a')</span>
+<span class="go">('c', 'b')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">itertools.combinations()</span></code> 可得到输入集合中元素的所有的组合。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a', 'b', 'c')</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a', 'b')</span>
+<span class="go">('a', 'c')</span>
+<span class="go">('b', 'c')</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a',)</span>
+<span class="go">('b',)</span>
+<span class="go">('c',)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对于 <code class="docutils literal notranslate"><span class="pre">combinations()</span></code> 来讲，元素的顺序已经不重要了。
+也就是说，组合 <code class="docutils literal notranslate"><span class="pre">('a',</span> <span class="pre">'b')</span></code> 跟 <code class="docutils literal notranslate"><span class="pre">('b',</span> <span class="pre">'a')</span></code> 其实是一样的(最终只会输出其中一个)。</p>
+<p>在计算组合的时候，一旦元素被选取就会从候选中剔除掉(比如如果元素’a’已经被选取了，那么接下来就不会再考虑它了)。
+而函数 <code class="docutils literal notranslate"><span class="pre">itertools.combinations_with_replacement()</span></code> 允许同一个元素被选择多次，比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combinations_with_replacement</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">('a', 'a', 'a')</span>
+<span class="go">('a', 'a', 'b')</span>
+<span class="go">('a', 'a', 'c')</span>
+<span class="go">('a', 'b', 'b')</span>
+<span class="go">('a', 'b', 'c')</span>
+<span class="go">('a', 'c', 'c')</span>
+<span class="go">('b', 'b', 'b')</span>
+<span class="go">('b', 'b', 'c')</span>
+<span class="go">('b', 'c', 'c')</span>
+<span class="go">('c', 'c', 'c')</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>这一小节我们向你展示的仅仅是 <code class="docutils literal notranslate"><span class="pre">itertools</span></code> 模块的一部分功能。
+尽管你也可以自己手动实现排列组合算法，但是这样做得要花点脑力。
+当我们碰到看上去有些复杂的迭代问题时，最好可以先去看看itertools模块。
+如果这个问题很普遍，那么很有可能会在里面找到解决方案！</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

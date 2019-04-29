@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.1 改变对象的字符串显示 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p08_classes_and_objects.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p08_classes_and_objects.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.1 改变对象的字符串显示<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想改变对象实例的打印或显示输出，让它们更具可读性。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>要改变一个实例的字符串表示，可重新定义它的 <code class="docutils literal notranslate"><span class="pre">__str__()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 方法。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Pair</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">'Pair({0.x!r}, {0.y!r})'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">'({0.x!s}, {0.y!s})'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 方法返回一个实例的代码表示形式，通常用来重新构造这个实例。
+内置的 <code class="docutils literal notranslate"><span class="pre">repr()</span></code> 函数返回这个字符串，跟我们使用交互式解释器显示的值是一样的。
+<code class="docutils literal notranslate"><span class="pre">__str__()</span></code> 方法将实例转换为一个字符串，使用 <code class="docutils literal notranslate"><span class="pre">str()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">print()</span></code> 函数会输出这个字符串。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Pair</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span>
+<span class="go">Pair(3, 4) # __repr__() output</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">(3, 4) # __str__() output</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>我们在这里还演示了在格式化的时候怎样使用不同的字符串表现形式。
+特别来讲，<code class="docutils literal notranslate"><span class="pre">!r</span></code> 格式化代码指明输出使用 <code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 来代替默认的 <code class="docutils literal notranslate"><span class="pre">__str__()</span></code> 。
+你可以用前面的类来试着测试下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Pair</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="s1">'p is {0!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="go">p is Pair(3, 4)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="s1">'p is {0}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="go">p is (3, 4)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>自定义 <code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">__str__()</span></code> 通常是很好的习惯，因为它能简化调试和实例输出。
+例如，如果仅仅只是打印输出或日志输出某个实例，那么程序员会看到实例更加详细与有用的信息。</p>
+<p><code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 生成的文本字符串标准做法是需要让 <code class="docutils literal notranslate"><span class="pre">eval(repr(x))</span> <span class="pre">==</span> <span class="pre">x</span></code> 为真。
+如果实在不能这样子做，应该创建一个有用的文本表示，并使用 &lt; 和 &gt; 括起来。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'file.dat'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">&lt;_io.TextIOWrapper name='file.dat' mode='r' encoding='UTF-8'&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果 <code class="docutils literal notranslate"><span class="pre">__str__()</span></code> 没有被定义，那么就会使用 <code class="docutils literal notranslate"><span class="pre">__repr__()</span></code> 来代替输出。</p>
+<p>上面的 <code class="docutils literal notranslate"><span class="pre">format()</span></code> 方法的使用看上去很有趣，格式化代码 <code class="docutils literal notranslate"><span class="pre">{0.x}</span></code> 对应的是第1个参数的x属性。
+因此，在下面的函数中，0实际上指的就是 <code class="docutils literal notranslate"><span class="pre">self</span></code> 本身：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">'Pair({0.x!r}, {0.y!r})'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>作为这种实现的一个替代，你也可以使用 <code class="docutils literal notranslate"><span class="pre">%</span></code> 操作符，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">'Pair(</span><span class="si">%r</span><span class="s1">, </span><span class="si">%r</span><span class="s1">)'</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>8.2 自定义字符串的格式化 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>8.2 自定义字符串的格式化<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你想通过 <code class="docutils literal notranslate"><span class="pre">format()</span></code> 函数和字符串方法使得一个对象能支持自定义的格式化。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>为了自定义字符串的格式化，我们需要在类上面定义 <code class="docutils literal notranslate"><span class="pre">__format__()</span></code> 方法。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_formats</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'ymd'</span> <span class="p">:</span> <span class="s1">'{d.year}-{d.month}-{d.day}'</span><span class="p">,</span>
+    <span class="s1">'mdy'</span> <span class="p">:</span> <span class="s1">'{d.month}/{d.day}/{d.year}'</span><span class="p">,</span>
+    <span class="s1">'dmy'</span> <span class="p">:</span> <span class="s1">'{d.day}/{d.month}/{d.year}'</span>
+    <span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">Date</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="n">month</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="n">day</span>
+
+    <span class="k">def</span> <span class="nf">__format__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="s1">'ymd'</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="n">_formats</span><span class="p">[</span><span class="n">code</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>现在 <code class="docutils literal notranslate"><span class="pre">Date</span></code> 类的实例可以支持格式化操作了，如同下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">'2012-12-21'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s1">'mdy'</span><span class="p">)</span>
+<span class="go">'12/21/2012'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">'The date is {:ymd}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">'The date is 2012-12-21'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">'The date is {:mdy}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">'The date is 12/21/2012'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">__format__()</span></code> 方法给Python的字符串格式化功能提供了一个钩子。
+这里需要着重强调的是格式化代码的解析工作完全由类自己决定。因此，格式化代码可以是任何值。
+例如，参考下面来自 <code class="docutils literal notranslate"><span class="pre">datetime</span></code> 模块中的代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">'2012-12-21'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="s1">'%A, %B </span><span class="si">%d</span><span class="s1">, %Y'</span><span class="p">)</span>
+<span class="go">'Friday, December 21, 2012'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">'The end is {:</span><span class="si">%d</span><span class="s1"> %b %Y}. Goodbye'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">'The end is 21 Dec 2012. Goodbye'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>对于内置类型的格式化有一些标准的约定。
+可以参考 <a class="reference external" href="https://docs.python.org/3/library/string.html">string模块文档</a> 说明。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

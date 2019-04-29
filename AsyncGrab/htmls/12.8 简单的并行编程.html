@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>12.8 简单的并行编程 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>12.8 简单的并行编程<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你有个程序要执行CPU密集型工作，你想让他利用多核CPU的优势来运行的快一点。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">concurrent.futures</span></code> 库提供了一个 <code class="docutils literal notranslate"><span class="pre">ProcessPoolExecutor</span></code> 类，
+可被用来在一个单独的Python解释器中执行计算密集型函数。
+不过，要使用它，你首先要有一些计算密集型的任务。
+我们通过一个简单而实际的例子来演示它。假定你有个Apache web服务器日志目录的gzip压缩包：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">logs</span><span class="o">/</span>
+   <span class="mf">20120701.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="mf">20120702.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="mf">20120703.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="mf">20120704.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="mf">20120705.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="mf">20120706.</span><span class="n">log</span><span class="o">.</span><span class="n">gz</span>
+   <span class="o">...</span>
+</pre></div>
+</div>
+<p>进一步假设每个日志文件内容类似下面这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">124.115</span><span class="o">.</span><span class="mf">6.12</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">50</span> <span class="o">-</span><span class="mi">0500</span><span class="p">]</span> <span class="s2">"GET /robots.txt ..."</span> <span class="mi">200</span> <span class="mi">71</span>
+<span class="mf">210.212</span><span class="o">.</span><span class="mf">209.67</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">51</span> <span class="o">-</span><span class="mi">0500</span><span class="p">]</span> <span class="s2">"GET /ply/ ..."</span> <span class="mi">200</span> <span class="mi">11875</span>
+<span class="mf">210.212</span><span class="o">.</span><span class="mf">209.67</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">18</span><span class="p">:</span><span class="mi">51</span> <span class="o">-</span><span class="mi">0500</span><span class="p">]</span> <span class="s2">"GET /favicon.ico ..."</span> <span class="mi">404</span> <span class="mi">369</span>
+<span class="mf">61.135</span><span class="o">.</span><span class="mf">216.105</span> <span class="o">-</span> <span class="o">-</span> <span class="p">[</span><span class="mi">10</span><span class="o">/</span><span class="n">Jul</span><span class="o">/</span><span class="mi">2012</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">20</span><span class="p">:</span><span class="mi">04</span> <span class="o">-</span><span class="mi">0500</span><span class="p">]</span> <span class="s2">"GET /blog/atom.xml ..."</span> <span class="mi">304</span> <span class="o">-</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>下面是一个脚本，在这些日志文件中查找出所有访问过robots.txt文件的主机：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># findrobots.py</span>
+
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="k">def</span> <span class="nf">find_robots</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Find all of the hosts that access robots.txt in a single log file</span>
+<span class="sd">    '''</span>
+    <span class="n">robots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s1">'ascii'</span><span class="p">):</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'/robots.txt'</span><span class="p">:</span>
+                <span class="n">robots</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">robots</span>
+
+<span class="k">def</span> <span class="nf">find_all_robots</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Find all hosts across and entire sequence of files</span>
+<span class="sd">    '''</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">logdir</span><span class="o">+</span><span class="s1">'/*.log.gz'</span><span class="p">)</span>
+    <span class="n">all_robots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">robots</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">find_robots</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="n">all_robots</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">robots</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">all_robots</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">robots</span> <span class="o">=</span> <span class="n">find_all_robots</span><span class="p">(</span><span class="s1">'logs'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ipaddr</span> <span class="ow">in</span> <span class="n">robots</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">ipaddr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>前面的程序使用了通常的map-reduce风格来编写。
+函数 <code class="docutils literal notranslate"><span class="pre">find_robots()</span></code> 在一个文件名集合上做map操作，并将结果汇总为一个单独的结果，
+也就是 <code class="docutils literal notranslate"><span class="pre">find_all_robots()</span></code> 函数中的 <code class="docutils literal notranslate"><span class="pre">all_robots</span></code> 集合。
+现在，假设你想要修改这个程序让它使用多核CPU。
+很简单——只需要将map()操作替换为一个 <code class="docutils literal notranslate"><span class="pre">concurrent.futures</span></code> 库中生成的类似操作即可。
+下面是一个简单修改版本：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># findrobots.py</span>
+
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">concurrent</span> <span class="kn">import</span> <span class="n">futures</span>
+
+<span class="k">def</span> <span class="nf">find_robots</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Find all of the hosts that access robots.txt in a single log file</span>
+
+<span class="sd">    '''</span>
+    <span class="n">robots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s1">'ascii'</span><span class="p">):</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'/robots.txt'</span><span class="p">:</span>
+                <span class="n">robots</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">robots</span>
+
+<span class="k">def</span> <span class="nf">find_all_robots</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="sd">'''</span>
+<span class="sd">    Find all hosts across and entire sequence of files</span>
+<span class="sd">    '''</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">logdir</span><span class="o">+</span><span class="s1">'/*.log.gz'</span><span class="p">)</span>
+    <span class="n">all_robots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">robots</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">find_robots</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+            <span class="n">all_robots</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">robots</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">all_robots</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">robots</span> <span class="o">=</span> <span class="n">find_all_robots</span><span class="p">(</span><span class="s1">'logs'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ipaddr</span> <span class="ow">in</span> <span class="n">robots</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">ipaddr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>通过这个修改后，运行这个脚本产生同样的结果，但是在四核机器上面比之前快了3.5倍。
+实际的性能优化效果根据你的机器CPU数量的不同而不同。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ProcessPoolExecutor</span></code> 的典型用法如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
+
+<span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="n">do</span> <span class="n">work</span> <span class="ow">in</span> <span class="n">parallel</span> <span class="n">using</span> <span class="n">pool</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>其原理是，一个 <code class="docutils literal notranslate"><span class="pre">ProcessPoolExecutor</span></code> 创建N个独立的Python解释器，
+N是系统上面可用CPU的个数。你可以通过提供可选参数给 <code class="docutils literal notranslate"><span class="pre">ProcessPoolExecutor(N)</span></code> 来修改
+处理器数量。这个处理池会一直运行到with块中最后一个语句执行完成，
+然后处理池被关闭。不过，程序会一直等待直到所有提交的工作被处理完成。</p>
+<p>被提交到池中的工作必须被定义为一个函数。有两种方法去提交。
+如果你想让一个列表推导或一个 <code class="docutils literal notranslate"><span class="pre">map()</span></code> 操作并行执行的话，可使用 <code class="docutils literal notranslate"><span class="pre">pool.map()</span></code> :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># A function that performs a lot of work</span>
+<span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="c1"># Nonparallel code</span>
+<span class="n">results</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">work</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># Parallel implementation</span>
+<span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">work</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>另外，你可以使用 <code class="docutils literal notranslate"><span class="pre">pool.submit()</span></code> 来手动的提交单个任务：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Some function</span>
+<span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="c1"># Example of submitting work to the pool</span>
+    <span class="n">future_result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">work</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+
+    <span class="c1"># Obtaining the result (blocks until done)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">future_result</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>如果你手动提交一个任务，结果是一个 <code class="docutils literal notranslate"><span class="pre">Future</span></code> 实例。
+要获取最终结果，你需要调用它的 <code class="docutils literal notranslate"><span class="pre">result()</span></code> 方法。
+它会阻塞进程直到结果被返回来。</p>
+<p>如果不想阻塞，你还可以使用一个回调函数，例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">when_done</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">'Got:'</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">result</span><span class="p">())</span>
+
+<span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+     <span class="n">future_result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">work</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+     <span class="n">future_result</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">when_done</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>回调函数接受一个 <code class="docutils literal notranslate"><span class="pre">Future</span></code> 实例，被用来获取最终的结果（比如通过调用它的result()方法）。
+尽管处理池很容易使用，在设计大程序的时候还是有很多需要注意的地方，如下几点：</p>
+<ul class="simple">
+<li>这种并行处理技术只适用于那些可以被分解为互相独立部分的问题。</li>
+<li>被提交的任务必须是简单函数形式。对于方法、闭包和其他类型的并行执行还不支持。</li>
+<li>函数参数和返回值必须兼容pickle，因为要使用到进程间的通信，所有解释器之间的交换数据必须被序列化</li>
+<li>被提交的任务函数不应保留状态或有副作用。除了打印日志之类简单的事情，</li>
+</ul>
+<p>一旦启动你不能控制子进程的任何行为，因此最好保持简单和纯洁——函数不要去修改环境。</p>
+<ul class="simple">
+<li>在Unix上进程池通过调用 <code class="docutils literal notranslate"><span class="pre">fork()</span></code> 系统调用被创建，</li>
+</ul>
+<p>它会克隆Python解释器，包括fork时的所有程序状态。
+而在Windows上，克隆解释器时不会克隆状态。
+实际的fork操作会在第一次调用 <code class="docutils literal notranslate"><span class="pre">pool.map()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">pool.submit()</span></code> 后发生。</p>
+<ul class="simple">
+<li>当你混合使用进程池和多线程的时候要特别小心。</li>
+</ul>
+<p>你应该在创建任何线程之前先创建并激活进程池（比如在程序启动的main线程中创建进程池）。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>2.1 使用多个界定符分割字符串 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p02_strings_and_text.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p02_strings_and_text.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>2.1 使用多个界定符分割字符串<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你需要将一个字符串分割为多个字段，但是分隔符(还有周围的空格)并不是固定的。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">string</span></code> 对象的 <code class="docutils literal notranslate"><span class="pre">split()</span></code> 方法只适应于非常简单的字符串分割情形，
+它并不允许有多个分隔符或者是分隔符周围不确定的空格。
+当你需要更加灵活的切割字符串的时候，最好使用 <code class="docutils literal notranslate"><span class="pre">re.split()</span></code> 方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">line</span> <span class="o">=</span> <span class="s1">'asdf fjdk; afed, fjek,asdf, foo'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">re</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[;,\s]\s*'</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+<span class="go">['asdf', 'fjdk', 'afed', 'fjek', 'asdf', 'foo']</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>函数 <code class="docutils literal notranslate"><span class="pre">re.split()</span></code> 是非常实用的，因为它允许你为分隔符指定多个正则模式。
+比如，在上面的例子中，分隔符可以是逗号，分号或者是空格，并且后面紧跟着任意个的空格。
+只要这个模式被找到，那么匹配的分隔符两边的实体都会被当成是结果中的元素返回。
+返回结果为一个字段列表，这个跟 <code class="docutils literal notranslate"><span class="pre">str.split()</span></code> 返回值类型是一样的。</p>
+<p>当你使用 <code class="docutils literal notranslate"><span class="pre">re.split()</span></code> 函数时候，需要特别注意的是正则表达式中是否包含一个括号捕获分组。
+如果使用了捕获分组，那么被匹配的文本也将出现在结果列表中。比如，观察一下这段代码运行后的结果：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(;|,|\s)\s*'</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span>
+<span class="go">['asdf', ' ', 'fjdk', ';', 'afed', ',', 'fjek', ',', 'asdf', ',', 'foo']</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>获取分割字符在某些情况下也是有用的。
+比如，你可能想保留分割字符串，用来在后面重新构造一个新的输出字符串：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delimiters</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">''</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span>
+<span class="go">['asdf', 'fjdk', 'afed', 'fjek', 'asdf', 'foo']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delimiters</span>
+<span class="go">[' ', ';', ',', ',', ',', '']</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Reform the line using the same delimiters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="n">d</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">delimiters</span><span class="p">))</span>
+<span class="go">'asdf fjdk;afed,fjek,asdf,foo'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你不想保留分割字符串到结果列表中去，但仍然需要使用到括号来分组正则表达式的话，
+确保你的分组是非捕获分组，形如 <code class="docutils literal notranslate"><span class="pre">(?:...)</span></code> 。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(?:,|;|\s)\s*'</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+<span class="go">['asdf', 'fjdk', 'afed', 'fjek', 'asdf', 'foo']</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

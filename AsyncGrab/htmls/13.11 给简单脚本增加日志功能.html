@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>13.11 给简单脚本增加日志功能 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>13.11 给简单脚本增加日志功能<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你希望在脚本和程序中将诊断信息写入日志文件。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>打印日志最简单方式是使用 <code class="docutils literal notranslate"><span class="pre">logging</span></code> 模块。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Configure the logging system</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+        <span class="n">filename</span><span class="o">=</span><span class="s1">'app.log'</span><span class="p">,</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Variables (to make the calls that follow work)</span>
+    <span class="n">hostname</span> <span class="o">=</span> <span class="s1">'www.python.org'</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="s1">'spam'</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="s1">'data.csv'</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="s1">'r'</span>
+
+    <span class="c1"># Example logging calls (insert into your program)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">'Host </span><span class="si">%s</span><span class="s1"> unknown'</span><span class="p">,</span> <span class="n">hostname</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Couldn't find </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'Feature is deprecated'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Opening file </span><span class="si">%r</span><span class="s1">, mode=</span><span class="si">%r</span><span class="s1">'</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Got here'</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>上面五个日志调用（critical(), error(), warning(), info(), debug()）以降序方式表示不同的严重级别。
+<code class="docutils literal notranslate"><span class="pre">basicConfig()</span></code> 的 <code class="docutils literal notranslate"><span class="pre">level</span></code> 参数是一个过滤器。
+所有级别低于此级别的日志消息都会被忽略掉。
+每个logging操作的参数是一个消息字符串，后面再跟一个或多个参数。
+构造最终的日志消息的时候我们使用了%操作符来格式化消息字符串。</p>
+<p>运行这个程序后，在文件 <code class="docutils literal notranslate"><span class="pre">app.log</span></code> 中的内容应该是下面这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CRITICAL</span><span class="p">:</span><span class="n">root</span><span class="p">:</span><span class="n">Host</span> <span class="n">www</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">org</span> <span class="n">unknown</span>
+<span class="n">ERROR</span><span class="p">:</span><span class="n">root</span><span class="p">:</span><span class="n">Could</span> <span class="ow">not</span> <span class="n">find</span> <span class="s1">'spam'</span>
+</pre></div>
+</div>
+<p>如果你想改变输出等级，你可以修改 <code class="docutils literal notranslate"><span class="pre">basicConfig()</span></code> 调用中的参数。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+     <span class="n">filename</span><span class="o">=</span><span class="s1">'app.log'</span><span class="p">,</span>
+     <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+     <span class="n">format</span><span class="o">=</span><span class="s1">'</span><span class="si">%(levelname)s</span><span class="s1">:</span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(message)s</span><span class="s1">'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>最后输出变成如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CRITICAL</span><span class="p">:</span><span class="mi">2012</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">20</span> <span class="mi">12</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">13</span><span class="p">,</span><span class="mi">595</span><span class="p">:</span><span class="n">Host</span> <span class="n">www</span><span class="o">.</span><span class="n">python</span><span class="o">.</span><span class="n">org</span> <span class="n">unknown</span>
+<span class="n">ERROR</span><span class="p">:</span><span class="mi">2012</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">20</span> <span class="mi">12</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">13</span><span class="p">,</span><span class="mi">595</span><span class="p">:</span><span class="n">Could</span> <span class="ow">not</span> <span class="n">find</span> <span class="s1">'spam'</span>
+<span class="n">WARNING</span><span class="p">:</span><span class="mi">2012</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">20</span> <span class="mi">12</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">13</span><span class="p">,</span><span class="mi">595</span><span class="p">:</span><span class="n">Feature</span> <span class="ow">is</span> <span class="n">deprecated</span>
+</pre></div>
+</div>
+<p>上面的日志配置都是硬编码到程序中的。如果你想使用配置文件，
+可以像下面这样修改 <code class="docutils literal notranslate"><span class="pre">basicConfig()</span></code> 调用：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">logging.config</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Configure the logging system</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">fileConfig</span><span class="p">(</span><span class="s1">'logconfig.ini'</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>创建一个下面这样的文件，名字叫 <code class="docutils literal notranslate"><span class="pre">logconfig.ini</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">loggers</span><span class="p">]</span>
+<span class="n">keys</span><span class="o">=</span><span class="n">root</span>
+
+<span class="p">[</span><span class="n">handlers</span><span class="p">]</span>
+<span class="n">keys</span><span class="o">=</span><span class="n">defaultHandler</span>
+
+<span class="p">[</span><span class="n">formatters</span><span class="p">]</span>
+<span class="n">keys</span><span class="o">=</span><span class="n">defaultFormatter</span>
+
+<span class="p">[</span><span class="n">logger_root</span><span class="p">]</span>
+<span class="n">level</span><span class="o">=</span><span class="n">INFO</span>
+<span class="n">handlers</span><span class="o">=</span><span class="n">defaultHandler</span>
+<span class="n">qualname</span><span class="o">=</span><span class="n">root</span>
+
+<span class="p">[</span><span class="n">handler_defaultHandler</span><span class="p">]</span>
+<span class="n">class</span><span class="o">=</span><span class="n">FileHandler</span>
+<span class="n">formatter</span><span class="o">=</span><span class="n">defaultFormatter</span>
+<span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="s1">'app.log'</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">)</span>
+
+<span class="p">[</span><span class="n">formatter_defaultFormatter</span><span class="p">]</span>
+<span class="nb">format</span><span class="o">=%</span><span class="p">(</span><span class="n">levelname</span><span class="p">)</span><span class="n">s</span><span class="p">:</span><span class="o">%</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="n">s</span><span class="p">:</span><span class="o">%</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="n">s</span>
+</pre></div>
+</div>
+<p>如果你想修改配置，可以直接编辑文件logconfig.ini即可。</p>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>尽管对于 <code class="docutils literal notranslate"><span class="pre">logging</span></code> 模块而已有很多更高级的配置选项，
+不过这里的方案对于简单的程序和脚本已经足够了。
+只想在调用日志操作前先执行下basicConfig()函数方法，你的程序就能产生日志输出了。</p>
+<p>如果你想要你的日志消息写到标准错误中，而不是日志文件中，调用 <code class="docutils literal notranslate"><span class="pre">basicConfig()</span></code> 时不传文件名参数即可。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">basicConfig()</span></code> 在程序中只能被执行一次。如果你稍后想改变日志配置，
+就需要先获取 <code class="docutils literal notranslate"><span class="pre">root</span> <span class="pre">logger</span></code> ，然后直接修改它。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
+</pre></div>
+</div>
+<p>需要强调的是本节只是演示了 <code class="docutils literal notranslate"><span class="pre">logging</span></code> 模块的一些基本用法。
+它可以做更多更高级的定制。
+关于日志定制化一个很好的资源是 <a class="reference external" href="https://docs.python.org/3/howto/logging-cookbook.html">Logging Cookbook</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

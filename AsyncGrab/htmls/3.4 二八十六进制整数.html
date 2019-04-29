@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>3.4 二八十六进制整数 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>3.4 二八十六进制整数<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你需要转换或者输出使用二进制，八进制或十六进制表示的整数。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>为了将整数转换为二进制、八进制或十六进制的文本串，
+可以分别使用 <code class="docutils literal notranslate"><span class="pre">bin()</span></code> , <code class="docutils literal notranslate"><span class="pre">oct()</span></code> 或 <code class="docutils literal notranslate"><span class="pre">hex()</span></code> 函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="mi">1234</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">bin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">'0b10011010010'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">oct</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">'0o2322'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">hex</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">'0x4d2'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>另外，如果你不想输出 <code class="docutils literal notranslate"><span class="pre">0b</span></code> , <code class="docutils literal notranslate"><span class="pre">0o</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">0x</span></code> 的前缀的话，可以使用 <code class="docutils literal notranslate"><span class="pre">format()</span></code> 函数。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">)</span>
+<span class="go">'10011010010'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'o'</span><span class="p">)</span>
+<span class="go">'2322'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">)</span>
+<span class="go">'4d2'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>整数是有符号的，所以如果你在处理负数的话，输出结果会包含一个负号。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1234</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">)</span>
+<span class="go">'-10011010010'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">)</span>
+<span class="go">'-4d2'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想产生一个无符号值，你需要增加一个指示最大位长度的值。比如为了显示32位的值，可以像下面这样写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1234</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">)</span>
+<span class="go">'11111111111111111111101100101110'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">format</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="s1">'x'</span><span class="p">)</span>
+<span class="go">'fffffb2e'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>为了以不同的进制转换整数字符串，简单的使用带有进制的 <code class="docutils literal notranslate"><span class="pre">int()</span></code> 函数即可：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="s1">'4d2'</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<span class="go">1234</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="s1">'10011010010'</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">1234</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>大多数情况下处理二进制、八进制和十六进制整数是很简单的。
+只要记住这些转换属于整数和其对应的文本表示之间的转换即可。永远只有一种整数类型。</p>
+<p>最后，使用八进制的程序员有一点需要注意下。
+Python指定八进制数的语法跟其他语言稍有不同。比如，如果你像下面这样指定八进制，会出现语法错误：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="s1">'script.py'</span><span class="p">,</span> <span class="mo">0755</span><span class="p">)</span>
+<span class="go">    File "&lt;stdin&gt;", line 1</span>
+<span class="go">        os.chmod('script.py', 0755)</span>
+<span class="go">                            ^</span>
+<span class="go">SyntaxError: invalid token</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>需确保八进制数的前缀是 <code class="docutils literal notranslate"><span class="pre">0o</span></code> ，就像下面这样：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="s1">'script.py'</span><span class="p">,</span> <span class="mi">0</span><span class="n">o755</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

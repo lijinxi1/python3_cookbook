@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>3.13 计算最后一个周五的日期 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>3.13 计算最后一个周五的日期<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id2">
+<h2>问题<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>你需要查找星期中某一天最后出现的日期，比如星期五。</p>
+</div>
+<div class="section" id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>Python的 <code class="docutils literal notranslate"><span class="pre">datetime</span></code> 模块中有工具函数和类可以帮助你执行这样的计算。
+下面是对类似这样的问题的一个通用解决方案：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">"""</span>
+<span class="sd">Topic: 最后的周五</span>
+<span class="sd">Desc :</span>
+<span class="sd">"""</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+
+<span class="n">weekdays</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Monday'</span><span class="p">,</span> <span class="s1">'Tuesday'</span><span class="p">,</span> <span class="s1">'Wednesday'</span><span class="p">,</span> <span class="s1">'Thursday'</span><span class="p">,</span>
+            <span class="s1">'Friday'</span><span class="p">,</span> <span class="s1">'Saturday'</span><span class="p">,</span> <span class="s1">'Sunday'</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">get_previous_byday</span><span class="p">(</span><span class="n">dayname</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="n">day_num</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">weekday</span><span class="p">()</span>
+    <span class="n">day_num_target</span> <span class="o">=</span> <span class="n">weekdays</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dayname</span><span class="p">)</span>
+    <span class="n">days_ago</span> <span class="o">=</span> <span class="p">(</span><span class="mi">7</span> <span class="o">+</span> <span class="n">day_num</span> <span class="o">-</span> <span class="n">day_num_target</span><span class="p">)</span> <span class="o">%</span> <span class="mi">7</span>
+    <span class="k">if</span> <span class="n">days_ago</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">days_ago</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">target_date</span> <span class="o">=</span> <span class="n">start_date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_ago</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">target_date</span>
+</pre></div>
+</div>
+<p>在交互式解释器中使用如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="c1"># For reference</span>
+<span class="go">datetime.datetime(2012, 8, 28, 22, 4, 30, 263076)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_previous_byday</span><span class="p">(</span><span class="s1">'Monday'</span><span class="p">)</span>
+<span class="go">datetime.datetime(2012, 8, 27, 22, 3, 57, 29045)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_previous_byday</span><span class="p">(</span><span class="s1">'Tuesday'</span><span class="p">)</span> <span class="c1"># Previous week, not today</span>
+<span class="go">datetime.datetime(2012, 8, 21, 22, 4, 12, 629771)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_previous_byday</span><span class="p">(</span><span class="s1">'Friday'</span><span class="p">)</span>
+<span class="go">datetime.datetime(2012, 8, 24, 22, 5, 9, 911393)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>可选的 <code class="docutils literal notranslate"><span class="pre">start_date</span></code> 参数可以由另外一个 <code class="docutils literal notranslate"><span class="pre">datetime</span></code> 实例来提供。比如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_previous_byday</span><span class="p">(</span><span class="s1">'Sunday'</span><span class="p">,</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">21</span><span class="p">))</span>
+<span class="go">datetime.datetime(2012, 12, 16, 0, 0)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>讨论<a class="headerlink" href="#id4" title="永久链接至标题">¶</a></h2>
+<p>上面的算法原理是这样的：先将开始日期和目标日期映射到星期数组的位置上(星期一索引为0)，
+然后通过模运算计算出目标日期要经过多少天才能到达开始日期。然后用开始日期减去那个时间差即得到结果日期。</p>
+<p>如果你要像这样执行大量的日期计算的话，你最好安装第三方包 <code class="docutils literal notranslate"><span class="pre">python-dateutil</span></code> 来代替。
+比如，下面是是使用 <code class="docutils literal notranslate"><span class="pre">dateutil</span></code> 模块中的 <code class="docutils literal notranslate"><span class="pre">relativedelta()</span></code> 函数执行同样的计算：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">dateutil.relativedelta</span> <span class="kn">import</span> <span class="n">relativedelta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">dateutil.rrule</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">2012-12-23 16:31:52.718111</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Next Friday</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="n">relativedelta</span><span class="p">(</span><span class="n">weekday</span><span class="o">=</span><span class="n">FR</span><span class="p">))</span>
+<span class="go">2012-12-28 16:31:52.718111</span>
+<span class="go">&gt;&gt;&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Last Friday</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="n">relativedelta</span><span class="p">(</span><span class="n">weekday</span><span class="o">=</span><span class="n">FR</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+<span class="go">2012-12-21 16:31:52.718111</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

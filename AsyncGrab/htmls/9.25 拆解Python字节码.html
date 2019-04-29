@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>9.25 拆解Python字节码 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p10_modules_and_packages.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p10_modules_and_packages.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="python">
+<h1>9.25 拆解Python字节码<a class="headerlink" href="#python" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想通过将你的代码反编译成低级的字节码来查看它底层的工作机制。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">dis</span></code> 模块可以被用来输出任何Python函数的反编译结果。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="gp">... </span><span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">'T-minus'</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+<span class="gp">... </span><span class="k">print</span><span class="p">(</span><span class="s1">'Blastoff!'</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">dis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">countdown</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>当你想要知道你的程序底层的运行机制的时候，<code class="docutils literal notranslate"><span class="pre">dis</span></code> 模块是很有用的。比如如果你想试着理解性能特征。
+被 <code class="docutils literal notranslate"><span class="pre">dis()</span></code> 函数解析的原始字节码如下所示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">countdown</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_code</span>
+<span class="go">b"x'\x00|\x00\x00d\x01\x00k\x04\x00r)\x00t\x00\x00d\x02\x00|\x00\x00\x83</span>
+<span class="go">\x02\x00\x01|\x00\x00d\x03\x008}\x00\x00q\x03\x00Wt\x00\x00d\x04\x00\x83</span>
+<span class="go">\x01\x00\x01d\x00\x00S"</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>如果你想自己解释这段代码，你需要使用一些在 <code class="docutils literal notranslate"><span class="pre">opcode</span></code> 模块中定义的常量。例如：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">countdown</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_code</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">opcode</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opcode</span><span class="o">.</span><span class="n">opname</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opcode</span><span class="o">.</span><span class="n">opname</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+<span class="go">'SETUP_LOOP'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opcode</span><span class="o">.</span><span class="n">opname</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
+<span class="go">'LOAD_FAST'</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>奇怪的是，在 <code class="docutils literal notranslate"><span class="pre">dis</span></code> 模块中并没有函数让你以编程方式很容易的来处理字节码。
+不过，下面的生成器函数可以将原始字节码序列转换成 <code class="docutils literal notranslate"><span class="pre">opcodes</span></code> 和参数。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">opcode</span>
+
+<span class="k">def</span> <span class="nf">generate_opcodes</span><span class="p">(</span><span class="n">codebytes</span><span class="p">):</span>
+    <span class="n">extended_arg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">codebytes</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">codebytes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">&gt;=</span> <span class="n">opcode</span><span class="o">.</span><span class="n">HAVE_ARGUMENT</span><span class="p">:</span>
+            <span class="n">oparg</span> <span class="o">=</span> <span class="n">codebytes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">codebytes</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">256</span> <span class="o">+</span> <span class="n">extended_arg</span>
+            <span class="n">extended_arg</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="n">opcode</span><span class="o">.</span><span class="n">EXTENDED_ARG</span><span class="p">:</span>
+                <span class="n">extended_arg</span> <span class="o">=</span> <span class="n">oparg</span> <span class="o">*</span> <span class="mi">65536</span>
+                <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">oparg</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">oparg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>使用方法如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">op</span><span class="p">,</span> <span class="n">oparg</span> <span class="ow">in</span> <span class="n">generate_opcodes</span><span class="p">(</span><span class="n">countdown</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_code</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">opcode</span><span class="o">.</span><span class="n">opname</span><span class="p">[</span><span class="n">op</span><span class="p">],</span> <span class="n">oparg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这种方式很少有人知道，你可以利用它替换任何你想要替换的函数的原始字节码。
+下面我们用一个示例来演示整个过程：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="vm">__code__</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span>
+<span class="go">&lt;code object add at 0x1007beed0, file "&lt;stdin&gt;", line 1&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">co_code</span>
+<span class="go">b'|\x00\x00|\x01\x00\x17S'</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Make a completely new code object with bogus byte code</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newbytecode</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">'xxxxxxx'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nc</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">CodeType</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">co_argcount</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_kwonlyargcount</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">c</span><span class="o">.</span><span class="n">co_nlocals</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_stacksize</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_flags</span><span class="p">,</span> <span class="n">newbytecode</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_consts</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">c</span><span class="o">.</span><span class="n">co_names</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_varnames</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_filename</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_name</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">c</span><span class="o">.</span><span class="n">co_firstlineno</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">co_lnotab</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nc</span>
+<span class="go">&lt;code object add at 0x10069fe40, file "&lt;stdin&gt;", line 1&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="vm">__code__</span> <span class="o">=</span> <span class="n">nc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">Segmentation fault</span>
+</pre></div>
+</div>
+<p>你可以像这样耍大招让解释器奔溃。但是，对于编写更高级优化和元编程工具的程序员来讲，
+他们可能真的需要重写字节码。本节最后的部分演示了这个是怎样做到的。你还可以参考另外一个类似的例子：
+<a class="reference external" href="http://code.activestate.com/recipes/277940-decorator-for-bindingconstants-at-compile-time/">this code on ActiveState</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>

@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  
+  <title>12.14 在Unix系统上面启动守护进程 — python3-cookbook 3.0.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/css/theme.css" rel="stylesheet" type="text/css"/>
+  <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/_static/pygments.css" rel="stylesheet" type="text/css"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/genindex.html" rel="index" title="索引"/><script>
+READTHEDOCS_DATA['page'] = 'c02/p02_match_text_at_start_end'
+READTHEDOCS_DATA['source_suffix'] = '.rst'
+</script>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/search.html" rel="search" title="搜索"/>
+    <link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/copyright.html" rel="copyright" title="版权所有"/>
+    
+     
+
+  
+  
+
+
+<!-- RTD Extra Head -->
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p13_utility_script_and_system_manage.html" rel="canonical"/>
+
+<link href="https://python3-cookbook.readthedocs.io/zh_CN/latest/chapters/p13_utility_script_and_system_manage.html" rel="stylesheet" type="text/css"/>
+
+
+
+<!-- Add page-specific data, which must exist in the page js, not global -->
+
+
+
+
+<!-- end RTD <extrahead> -->
+</head>
+    <body>
+    <div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="unix">
+<h1>12.14 在Unix系统上面启动守护进程<a class="headerlink" href="#unix" title="永久链接至标题">¶</a></h1>
+<div class="section" id="id1">
+<h2>问题<a class="headerlink" href="#id1" title="永久链接至标题">¶</a></h2>
+<p>你想编写一个作为一个在Unix或类Unix系统上面运行的守护进程运行的程序。</p>
+</div>
+<div class="section" id="id2">
+<h2>解决方案<a class="headerlink" href="#id2" title="永久链接至标题">¶</a></h2>
+<p>创建一个正确的守护进程需要一个精确的系统调用序列以及对于细节的控制。
+下面的代码展示了怎样定义一个守护进程，可以启动后很容易的停止它。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># daemon.py</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">atexit</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+
+<span class="k">def</span> <span class="nf">daemonize</span><span class="p">(</span><span class="n">pidfile</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="s1">'/dev/null'</span><span class="p">,</span>
+                          <span class="n">stdout</span><span class="o">=</span><span class="s1">'/dev/null'</span><span class="p">,</span>
+                          <span class="n">stderr</span><span class="o">=</span><span class="s1">'/dev/null'</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pidfile</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'Already running'</span><span class="p">)</span>
+
+    <span class="c1"># First fork (detaches from parent)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">fork</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># Parent exit</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'fork #1 failed.'</span><span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">setsid</span><span class="p">()</span>
+    <span class="c1"># Second fork (relinquish session leadership)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">fork</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'fork #2 failed.'</span><span class="p">)</span>
+
+    <span class="c1"># Flush I/O buffers</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c1"># Replace file descriptors for stdin, stdout, and stderr</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="s1">'ab'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s1">'ab'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+
+    <span class="c1"># Write the PID file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pidfile</span><span class="p">,</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span><span class="nb">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># Arrange to have the PID file removed on exit/signal</span>
+    <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">pidfile</span><span class="p">))</span>
+
+    <span class="c1"># Signal handler for termination (required)</span>
+    <span class="k">def</span> <span class="nf">sigterm_handler</span><span class="p">(</span><span class="n">signo</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">sigterm_handler</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'Daemon started with pid {}</span><span class="se">\n</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()))</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'Daemon Alive! {}</span><span class="se">\n</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">()))</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="n">PIDFILE</span> <span class="o">=</span> <span class="s1">'/tmp/daemon.pid'</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Usage: {} [start|stop]'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'start'</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">daemonize</span><span class="p">(</span><span class="n">PIDFILE</span><span class="p">,</span>
+                      <span class="n">stdout</span><span class="o">=</span><span class="s1">'/tmp/daemon.log'</span><span class="p">,</span>
+                      <span class="n">stderr</span><span class="o">=</span><span class="s1">'/tmp/dameon.log'</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">main</span><span class="p">()</span>
+
+    <span class="k">elif</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'stop'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">PIDFILE</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">PIDFILE</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()),</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">'Not running'</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">'Unknown command {!r}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>要启动这个守护进程，用户需要使用如下的命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>bash % daemon.py start
+bash % cat /tmp/daemon.pid
+2882
+bash % tail -f /tmp/daemon.log
+Daemon started with pid 2882
+Daemon Alive! Fri Oct 12 13:45:37 2012
+Daemon Alive! Fri Oct 12 13:45:47 2012
+...
+</pre></div>
+</div>
+<p>守护进程可以完全在后台运行，因此这个命令会立即返回。
+不过，你可以像上面那样查看与它相关的pid文件和日志。要停止这个守护进程，使用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="o">%</span> <span class="n">daemon</span><span class="o">.</span><span class="n">py</span> <span class="n">stop</span>
+<span class="n">bash</span> <span class="o">%</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>讨论<a class="headerlink" href="#id3" title="永久链接至标题">¶</a></h2>
+<p>本节定义了一个函数 <code class="docutils literal notranslate"><span class="pre">daemonize()</span></code> ，在程序启动时被调用使得程序以一个守护进程来运行。
+<code class="docutils literal notranslate"><span class="pre">daemonize()</span></code> 函数只接受关键字参数，这样的话可选参数在被使用时就更清晰了。
+它会强制用户像下面这样使用它：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">daemonize</span><span class="p">(</span><span class="s1">'daemon.pid'</span><span class="p">,</span>
+          <span class="n">stdin</span><span class="o">=</span><span class="s1">'/dev/null,</span>
+          <span class="n">stdout</span><span class="o">=</span><span class="s1">'/tmp/daemon.log'</span><span class="p">,</span>
+          <span class="n">stderr</span><span class="o">=</span><span class="s1">'/tmp/daemon.log'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>而不是像下面这样含糊不清的调用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Illegal. Must use keyword arguments</span>
+<span class="n">daemonize</span><span class="p">(</span><span class="s1">'daemon.pid'</span><span class="p">,</span>
+          <span class="s1">'/dev/null'</span><span class="p">,</span> <span class="s1">'/tmp/daemon.log'</span><span class="p">,</span><span class="s1">'/tmp/daemon.log'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>创建一个守护进程的步骤看上去不是很易懂，但是大体思想是这样的，
+首先，一个守护进程必须要从父进程中脱离。
+这是由 <code class="docutils literal notranslate"><span class="pre">os.fork()</span></code> 操作来完成的，并立即被父进程终止。</p>
+<p>在子进程变成孤儿后，调用 <code class="docutils literal notranslate"><span class="pre">os.setsid()</span></code> 创建了一个全新的进程会话，并设置子进程为首领。
+它会设置这个子进程为新的进程组的首领，并确保不会再有控制终端。
+如果这些听上去太魔幻，因为它需要将守护进程同终端分离开并确保信号机制对它不起作用。
+调用 <code class="docutils literal notranslate"><span class="pre">os.chdir()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">os.umask(0)</span></code> 改变了当前工作目录并重置文件权限掩码。
+修改目录通常是个好主意，因为这样可以使得它不再工作在被启动时的目录。</p>
+<p>另外一个调用 <code class="docutils literal notranslate"><span class="pre">os.fork()</span></code> 在这里更加神秘点。
+这一步使得守护进程失去了获取新的控制终端的能力并且让它更加独立
+（本质上，该daemon放弃了它的会话首领低位，因此再也没有权限去打开控制终端了）。
+尽管你可以忽略这一步，但是最好不要这么做。</p>
+<p>一旦守护进程被正确的分离，它会重新初始化标准I/O流指向用户指定的文件。
+这一部分有点难懂。跟标准I/O流相关的文件对象的引用在解释器中多个地方被找到
+（sys.stdout, sys.__stdout__等）。
+仅仅简单的关闭 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 并重新指定它是行不通的，
+因为没办法知道它是否全部都是用的是 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 。
+这里，我们打开了一个单独的文件对象，并调用 <code class="docutils literal notranslate"><span class="pre">os.dup2()</span></code> ，
+用它来代替被 <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 使用的文件描述符。
+这样，<code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> 使用的原始文件会被关闭并由新的来替换。
+还要强调的是任何用于文件编码或文本处理的标准I/O流还会保留原状。</p>
+<p>守护进程的一个通常实践是在一个文件中写入进程ID，可以被其他程序后面使用到。
+<code class="docutils literal notranslate"><span class="pre">daemonize()</span></code> 函数的最后部分写了这个文件，但是在程序终止时删除了它。
+<code class="docutils literal notranslate"><span class="pre">atexit.register()</span></code> 函数注册了一个函数在Python解释器终止时执行。
+一个对于SIGTERM的信号处理器的定义同样需要被优雅的关闭。
+信号处理器简单的抛出了 <code class="docutils literal notranslate"><span class="pre">SystemExit()</span></code> 异常。
+或许这一步看上去没必要，但是没有它，
+终止信号会使得不执行 <code class="docutils literal notranslate"><span class="pre">atexit.register()</span></code> 注册的清理操作的时候就杀掉了解释器。
+一个杀掉进程的例子代码可以在程序最后的 <code class="docutils literal notranslate"><span class="pre">stop</span></code> 命令的操作中看到。</p>
+<p>更多关于编写守护进程的信息可以查看《UNIX 环境高级编程》, 第二版
+by W. Richard Stevens and Stephen A. Rago (Addison-Wesley, 2005)。
+尽管它是关注与C语言编程，但是所有的内容都适用于Python，
+因为所有需要的POSIX函数都可以在标准库中找到。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+    </body>
+</html>
