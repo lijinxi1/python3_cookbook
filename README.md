@@ -48,7 +48,6 @@ https://linux-c-learning-all-in-one.readthedocs.io/zh_CN / latest /  《one stop
 
 <hr />
 
- 
 
 #### 这个项目是用来抓取python cookbook的中文译本的，它是我最喜欢的一个教程：http://https://python3-cookbook.readthedocs.io/zh-CN/latest/
 
@@ -89,3 +88,7 @@ https://zj-linux-guide.readthedocs.io/zh_CN/latest/   《linux指南》
 https://linux-c-learning-all-in-one.readthedocs.io/zh_CN/latest/  《Linux C编程一站式学习》
 
 他们的代码是差不多的，你也可以试试。
+
+可以使用firefox打印templates.html，效果更好，如下：
+
+![image-20191219231345671](image-20191219231345671.png)
